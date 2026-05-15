@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>外壁カラー後悔防止アプリ</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <main class="app-shell">
+    <header class="app-header">
+      <p class="eyebrow">外壁塗装の色選びをさらに実用的に</p>
+      <h1>外壁カラー後悔防止アプリ</h1>
+      <p class="description">画像はサーバーに送信せずブラウザ内だけで処理します。外壁だけ色変化を出しやすくし、営業シーンでも見せやすいUIです。</p>
+    </header>
+
+    <section class="card upload-card">
+      <div class="upload-top">
+        <label class="button-file" for="imageUpload">写真をアップロード</label>
+        <div class="status-box" id="imageStatus">未アップロード</div>
+      </div>
+      <input id="imageUpload" type="file" accept="image/*" />
+      <p class="hint">家の写真だけを扱い、空・木・車にはカラーを乗せにくくします。</p>
+      <div class="preview-frame">
+        <div class="preview-header">
+          <span>プレビュー</span>
+          <button id="beforeAfterToggle" class="small-button" type="button">アフター表示</button>
+        </div>
+        <div class="image-preview" id="imagePreview">
+          <img id="previewImage" alt="家の写真プレビュー" />
+          <div class="preview-mask"></div>
+          <p class="placeholder">ここに住宅写真が表示されます。</p>
+        </div>
+      </div>
+    </section>
+
+    <section class="card theme-card">
+      <div class="section-title-row">
+        <h2>AIおすすめ配色</h2>
+        <p>ボタンを押すと外壁・屋根・サッシ・艶感を自動設定します。</p>
+      </div>
+      <div class="theme-grid" id="themeOptions"></div>
+      <div class="theme-comment" id="themeComment">おすすめ配色を選んで、営業トークに使えるコメントを表示します。</div>
+    </section>
+
+    <section class="card selector-card">
+      <div class="selector-grid">
+        <div>
+          <p class="label">外壁カラー</p>
+          <div class="color-options" id="wallColorOptions"></div>
+        </div>
+        <div>
+          <p class="label">屋根カラー</p>
+          <div class="small-options" id="roofColorOptions"></div>
+        </div>
+        <div>
+          <p class="label">サッシカラー</p>
+          <div class="small-options" id="sashColorOptions"></div>
+        </div>
+        <div>
+          <p class="label">仕上げ</p>
+          <div class="finish-options" id="finishOptions"></div>
+        </div>
+      </div>
+      <div class="selector-summary">
+        <div>
+          <p class="label">外壁</p>
+          <div class="color-swatch" id="selectedWallSwatch"></div>
+          <p id="selectedWallColorName" class="selected-color-name">--</p>
+        </div>
+        <div>
+          <p class="label">屋根</p>
+          <div class="color-swatch" id="selectedRoofSwatch"></div>
+          <p id="selectedRoofColorName" class="selected-color-name">--</p>
+        </div>
+        <div>
+          <p class="label">サッシ</p>
+          <div class="color-swatch" id="selectedSashSwatch"></div>
+          <p id="selectedSashColorName" class="selected-color-name">--</p>
+        </div>
+        <div>
+          <p class="label">仕上げ</p>
+          <div class="color-swatch" id="selectedFinishSwatch"></div>
+          <p id="selectedFinishName" class="selected-color-name">--</p>
+        </div>
+      </div>
+    </section>
+
+    <section class="card save-card">
+      <div class="save-header">
+        <div>
+          <h2>保存・共有</h2>
+          <p>現在の配色を保存して、後で一覧から呼び出せます。</p>
+        </div>
+        <button id="copyShareUrl" class="button-secondary" type="button">共有URLをコピー</button>
+      </div>
+      <div class="save-form">
+        <input id="saveName" type="text" placeholder="保存名を入力（例: 第一候補）" />
+        <button id="savePattern" class="button-primary" type="button">保存する</button>
+      </div>
+      <div class="save-list" id="savedList"></div>
+    </section>
+
+    <section class="card info-card">
+      <h2>確認メモ</h2>
+      <div class="info-grid">
+        <div>
+          <p class="label">高級感</p>
+          <p id="luxuryValue" class="info-value">--</p>
+        </div>
+        <div>
+          <p class="label">汚れやすさ</p>
+          <p id="riskDirt" class="info-value">--</p>
+        </div>
+        <div>
+          <p class="label">色褪せ</p>
+          <p id="riskFade" class="info-value">--</p>
+        </div>
+        <div>
+          <p class="label">雨だれ目立ち</p>
+          <p id="riskStreak" class="info-value">--</p>
+        </div>
+      </div>
+      <p id="colorAdvice" class="message">選択した色の注意点をここに表示します。</p>
+      <div class="warning-box" id="comboWarning"></div>
+      <div class="customer-comment" id="customerComment">--</div>
+      <p id="summaryText" class="message">保存や共有機能を使って、営業先でもすぐに再現できます。</p>
+    </section>
+  </main>
+  <script src="script.js"></script>
+</body>
+</html>
