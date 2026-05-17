@@ -147,6 +147,9 @@ h1 {
 #previewCanvas { width: 100%; height: auto; display:block; max-height: 68vh; }
 .placeholder-text { color:#64748b; font-size:1.02rem; padding:18px; text-align:center; }
 
+/* プレビュー画像 */
+#previewImage { border-radius: 12px; display: block; max-height: 68vh; object-fit: contain; }
+
 /* モバイル最適化 */
 @media (max-width: 640px) {
   .app-shell { padding: 18px 12px; }

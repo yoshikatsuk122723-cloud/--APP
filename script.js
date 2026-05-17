@@ -244,11 +244,37 @@ function renderFinishOptions() {
     finishGrid.appendChild(btn);
   });
 }
-
 function renderThemes() {
   themeGrid.innerHTML = "";
   AI_THEMES.forEach(theme => {
-  // スマホ向け: accept="image/*" を前提に、MIME が image/ なら許可
+    const btn = document.createElement("button");
+    btn.className = "theme-button";
+    btn.textContent = theme.name;
+    btn.onclick = () => { applyTheme(theme); };
+    themeGrid.appendChild(btn);
+  });
+}
+
+// ============================================================================
+// イベント設定と画像アップロード処理
+// ============================================================================
+
+const previewImage = document.getElementById('previewImage');
+
+function setupEventListeners() {
+  if (imageUpload) imageUpload.addEventListener('change', handleImageUpload);
+  const imageSelectBtn = document.getElementById('imageSelectBtn');
+  if (imageSelectBtn && imageUpload) imageSelectBtn.addEventListener('click', (e) => { e.preventDefault(); imageUpload.click(); });
+  if (beforeAfterToggle) beforeAfterToggle.addEventListener('click', toggleBeforeAfter);
+  if (savePatternBtn) savePatternBtn.addEventListener('click', savePattern);
+  if (copyShareUrlBtn) copyShareUrlBtn.addEventListener('click', copyShareUrl);
+}
+
+function handleImageUpload(e) {
+  const file = (e && e.target && e.target.files && e.target.files[0]) || null;
+  if (!file) return;
+
+  // 基本は image/* を受け入れる。拡張子にHEICが来る場合もあるため許容するが、ブラウザ依存で表示不可の可能性あり。
   const lowerName = (file.name || '').toLowerCase();
   const allowedExt = [".jpg", ".jpeg", ".png", ".webp", ".heic", ".heif"];
   const hasValidExt = allowedExt.some(ext => lowerName.endsWith(ext));
@@ -256,61 +282,57 @@ function renderThemes() {
 
   if (!isImageMime && !hasValidExt) {
     imageStatus.textContent = "対応形式: JPG / PNG / WEBP / HEIC の画像を選んでください";
-    imageStatus.classList.remove("success");
-    imageStatus.classList.add("error");
+    imageStatus.classList.remove('success');
+    imageStatus.classList.add('error');
     return;
   }
 
   const reader = new FileReader();
-  reader.onload = (event) => {
+  reader.onload = (ev) => {
+    const dataUrl = ev.target.result;
+
+    // まずは img で即時プレビュー
+    if (previewImage) {
+      previewImage.src = dataUrl;
+      previewImage.style.display = 'block';
+    }
+    // 隠していたキャンバスは一旦非表示。canvas は元画像を読み込んでから表示する。
+    if (previewCanvas) previewCanvas.style.display = 'none';
+
     const img = new Image();
-    img.crossOrigin = 'anonymous';
     img.onload = () => {
       currentState.originalImage = img;
       originalCanvas = createCanvasFromImage(img);
       processedCanvas = createCanvasFromImage(img);
 
-      // 描画
-      placeholderText.style.display = "none";
-      imageStatus.textContent = "写真を読み込みました";
-      imageStatus.classList.remove("error");
-      imageStatus.classList.add("success");
-      beforeAfterToggle.style.display = "block";
-      redrawCanvas();
-      console.log("写真をアップロード:", img.width, "x", img.height);
+      // キャンバスに描画して表示
+      if (previewCanvas) {
+        previewCanvas.style.display = 'block';
+        previewImage.style.display = 'none';
+        redrawCanvas();
+      }
+
+      placeholderText.style.display = 'none';
+      imageStatus.textContent = '写真を読み込みました';
+      imageStatus.classList.remove('error');
+      imageStatus.classList.add('success');
+      if (beforeAfterToggle) beforeAfterToggle.style.display = 'block';
     };
     img.onerror = () => {
-      imageStatus.textContent = "写真を読み込めませんでした。別の画像を選んでください。";
-      imageStatus.classList.remove("success");
-      imageStatus.classList.add("error");
-      beforeAfterToggle.style.display = "none";
-      placeholderText.style.display = "block";
+      // 表示不能
+      if (previewImage) previewImage.style.display = 'none';
+      if (previewCanvas) previewCanvas.style.display = 'none';
+      placeholderText.style.display = 'block';
+      imageStatus.textContent = '写真を読み込めませんでした。別の画像を選んでください。';
+      imageStatus.classList.remove('success');
+      imageStatus.classList.add('error');
     };
-    img.src = event.target.result;
+    img.src = dataUrl;
   };
-  reader.readAsDataURL(file);
-    const img = new Image();
-    img.crossOrigin = 'anonymous';
-    img.onload = () => {
-      currentState.originalImage = img;
-      originalCanvas = createCanvasFromImage(img);
-      processedCanvas = createCanvasFromImage(img);
-
-      // 描画
-      placeholderText.style.display = "none";
-      imageStatus.textContent = "写真を読み込みました";
-      imageStatus.classList.remove("error");
-      imageStatus.classList.add("success");
-      beforeAfterToggle.style.display = "block";
-      redrawCanvas();
-      console.log("写真をアップロード:", img.width, "x", img.height);
-    };
-    img.onerror = () => {
-      imageStatus.textContent = "写真の読み込みに失敗しました";
-      imageStatus.classList.remove("success");
-      imageStatus.classList.add("error");
-    };
-    img.src = event.target.result;
+  reader.onerror = () => {
+    imageStatus.textContent = '写真を読み込めませんでした。別の画像を選んでください。';
+    imageStatus.classList.remove('success');
+    imageStatus.classList.add('error');
   };
   reader.readAsDataURL(file);
 }
