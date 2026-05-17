@@ -248,38 +248,14 @@ function renderFinishOptions() {
 function renderThemes() {
   themeGrid.innerHTML = "";
   AI_THEMES.forEach(theme => {
-    const btn = document.createElement("button");
-    btn.className = "theme-button";
-    btn.textContent = theme.name;
-    btn.onclick = () => { applyTheme(theme); };
-    themeGrid.appendChild(btn);
-  });
-}
-
-// ============================================================================
-// 写真アップロード
-// ============================================================================
-
-function setupEventListeners() {
-  imageUpload.addEventListener("change", handleImageUpload);
-  // ラベル押下で input が開かない場合のフォールバック
-  const imageSelectBtn = document.getElementById("imageSelectBtn");
-  if (imageSelectBtn) imageSelectBtn.addEventListener('click', () => imageUpload.click());
-  beforeAfterToggle.addEventListener("click", toggleBeforeAfter);
-  savePatternBtn.addEventListener("click", savePattern);
-  copyShareUrlBtn.addEventListener("click", copyShareUrl);
-}
-
-function handleImageUpload(e) {
-  const file = e.target.files[0];
-  if (!file) return;
-  // ファイル形式チェック（拡張子も許可）
-  const validTypes = ["image/jpeg", "image/png", "image/webp", "image/jpg"];
-  const allowedExt = [".jpg", ".jpeg", ".png", ".webp"];
-  const lowerName = file.name.toLowerCase();
+  // スマホ向け: accept="image/*" を前提に、MIME が image/ なら許可
+  const lowerName = (file.name || '').toLowerCase();
+  const allowedExt = [".jpg", ".jpeg", ".png", ".webp", ".heic", ".heif"];
   const hasValidExt = allowedExt.some(ext => lowerName.endsWith(ext));
-  if (!validTypes.includes(file.type) && !hasValidExt) {
-    imageStatus.textContent = "対応形式: JPG / PNG / WEBP を選択してください";
+  const isImageMime = file.type && file.type.startsWith('image/');
+
+  if (!isImageMime && !hasValidExt) {
+    imageStatus.textContent = "対応形式: JPG / PNG / WEBP / HEIC の画像を選んでください";
     imageStatus.classList.remove("success");
     imageStatus.classList.add("error");
     return;
@@ -287,6 +263,32 @@ function handleImageUpload(e) {
 
   const reader = new FileReader();
   reader.onload = (event) => {
+    const img = new Image();
+    img.crossOrigin = 'anonymous';
+    img.onload = () => {
+      currentState.originalImage = img;
+      originalCanvas = createCanvasFromImage(img);
+      processedCanvas = createCanvasFromImage(img);
+
+      // 描画
+      placeholderText.style.display = "none";
+      imageStatus.textContent = "写真を読み込みました";
+      imageStatus.classList.remove("error");
+      imageStatus.classList.add("success");
+      beforeAfterToggle.style.display = "block";
+      redrawCanvas();
+      console.log("写真をアップロード:", img.width, "x", img.height);
+    };
+    img.onerror = () => {
+      imageStatus.textContent = "写真を読み込めませんでした。別の画像を選んでください。";
+      imageStatus.classList.remove("success");
+      imageStatus.classList.add("error");
+      beforeAfterToggle.style.display = "none";
+      placeholderText.style.display = "block";
+    };
+    img.src = event.target.result;
+  };
+  reader.readAsDataURL(file);
     const img = new Image();
     img.crossOrigin = 'anonymous';
     img.onload = () => {
