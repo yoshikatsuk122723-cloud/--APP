@@ -522,3 +522,90 @@ input[type="file"] {
     margin-top: 16px;
   }
 }
+
+/* ============================================================================
+   手動マスク型UI
+   ============================================================================ */
+
+/* 操作ガイド */
+.guide-section {
+  background: linear-gradient(135deg, #eff6ff 0%, #f0f9ff 100%);
+  border-left: 4px solid #2b6cb0;
+  margin-bottom: 22px;
+}
+
+.step-guide {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+  gap: 12px;
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.step-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  padding: 12px;
+  background: #fff;
+  border-radius: 12px;
+  text-align: center;
+}
+
+.step-number {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: #2b6cb0;
+  color: #fff;
+  font-weight: 700;
+  font-size: 1.1rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.step-text {
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: #111827;
+}
+
+/* ペイント UI */
+#drawingCanvas {
+  cursor: crosshair;
+  touch-action: none;
+  width: 100%;
+  height: auto;
+  display: block;
+  border-radius: 12px;
+  max-height: 68vh;
+}
+
+.drawing-hint {
+  color: #2b6cb0;
+  font-weight: 700;
+  font-size: 0.95rem;
+  padding: 10px;
+  text-align: center;
+}
+
+.preview-controls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-bottom: 16px;
+  justify-content: center;
+}
+
+@media (max-width: 640px) {
+  .guide-section { margin-bottom: 18px; }
+  .step-guide { grid-template-columns: repeat(2, 1fr); gap: 10px; }
+  .step-item { padding: 10px; }
+  .step-number { width: 36px; height: 36px; font-size: 1rem; }
+  .step-text { font-size: 0.85rem; }
+  .preview-controls { justify-content: flex-start; }
+  .preview-controls .btn { flex: 1; min-width: 120px; }
+}

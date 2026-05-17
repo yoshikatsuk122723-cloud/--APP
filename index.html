@@ -15,6 +15,29 @@
       <p class="description">写真を1枚アップロードするだけで、リアルタイムに色見本を比較。後悔を減らす提案ができます。</p>
     </header>
 
+    <!-- 操作手順ガイド -->
+    <section class="card guide-section">
+      <h2>📖 操作手順</h2>
+      <ol class="step-guide">
+        <li class="step-item">
+          <div class="step-number">1</div>
+          <div class="step-text">写真を選ぶ</div>
+        </li>
+        <li class="step-item">
+          <div class="step-number">2</div>
+          <div class="step-text">壁をなぞって選択</div>
+        </li>
+        <li class="step-item">
+          <div class="step-number">3</div>
+          <div class="step-text">色を選ぶ</div>
+        </li>
+        <li class="step-item">
+          <div class="step-number">4</div>
+          <div class="step-text">仕上がりを確認</div>
+        </li>
+      </ol>
+    </section>
+
     <!-- アップロード & プレビューセクション -->
     <section class="card upload-section">
       <div class="upload-header">
@@ -25,12 +48,17 @@
       
       <div class="preview-container">
         <div class="preview-controls">
+          <button id="startDrawBtn" class="btn btn-primary" style="display:none;">🎨 壁をなぞって選択</button>
+          <button id="stopDrawBtn" class="btn btn-secondary" style="display:none;">選択完了</button>
+          <button id="resetMaskBtn" class="btn btn-secondary" style="display:none;">選択をリセット</button>
           <button id="beforeAfterToggle" class="btn btn-secondary" style="display:none;">ビフォー・アフター切り替え</button>
         </div>
         <div class="canvas-wrapper">
-          <img id="previewImage" alt="プレビュー画像" style="display:none; max-width:100%; height:auto;" />
+          <canvas id="drawingCanvas" style="display:none; border: 2px solid #4338ca; border-radius: 12px;"></canvas>
           <canvas id="previewCanvas" style="display:none;"></canvas>
+          <img id="previewImage" alt="プレビュー画像" style="display:none; max-width:100%; height:auto; border-radius: 12px;" />
           <p id="placeholderText" class="placeholder-text">ここに家の写真が表示されます</p>
+          <p id="drawingHint" class="drawing-hint" style="display:none;">壁をなぞってください。タッチ/マウスで選択できます。</p>
         </div>
       </div>
     </section>

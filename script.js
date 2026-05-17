@@ -128,7 +128,10 @@ const AI_THEMES = [
 
 let originalCanvas = null;
 let processedCanvas = null;
+let maskCanvas = null;      // マスク用キャンバス
 let isShowingAfter = true;
+let isDrawingMode = false;  // ペイントモード中フラグ
+let isDrawing = false;      // 描画中フラグ
 
 let currentState = {
   wall: "ivory",
@@ -145,8 +148,14 @@ let currentState = {
 const imageUpload = document.getElementById("imageUpload");
 const imageStatus = document.getElementById("imageStatus");
 const placeholderText = document.getElementById("placeholderText");
+const previewImage = document.getElementById("previewImage");
 const previewCanvas = document.getElementById("previewCanvas");
+const drawingCanvas = document.getElementById("drawingCanvas");
+const drawingHint = document.getElementById("drawingHint");
 const beforeAfterToggle = document.getElementById("beforeAfterToggle");
+const startDrawBtn = document.getElementById("startDrawBtn");
+const stopDrawBtn = document.getElementById("stopDrawBtn");
+const resetMaskBtn = document.getElementById("resetMaskBtn");
 
 const wallColorGrid = document.getElementById("wallColorGrid");
 const roofColorGrid = document.getElementById("roofColorGrid");
@@ -266,22 +275,35 @@ function setupEventListeners() {
   const imageSelectBtn = document.getElementById('imageSelectBtn');
   if (imageSelectBtn && imageUpload) imageSelectBtn.addEventListener('click', (e) => { e.preventDefault(); imageUpload.click(); });
   if (beforeAfterToggle) beforeAfterToggle.addEventListener('click', toggleBeforeAfter);
+  if (startDrawBtn) startDrawBtn.addEventListener('click', startDrawingMode);
+  if (stopDrawBtn) stopDrawBtn.addEventListener('click', stopDrawingMode);
+  if (resetMaskBtn) resetMaskBtn.addEventListener('click', resetMask);
   if (savePatternBtn) savePatternBtn.addEventListener('click', savePattern);
   if (copyShareUrlBtn) copyShareUrlBtn.addEventListener('click', copyShareUrl);
+  
+  // ペイント用キャンバスのイベント
+  if (drawingCanvas) {
+    drawingCanvas.addEventListener('touchstart', handleCanvasTouchStart, false);
+    drawingCanvas.addEventListener('touchmove', handleCanvasTouchMove, false);
+    drawingCanvas.addEventListener('touchend', handleCanvasTouchEnd, false);
+    drawingCanvas.addEventListener('mousedown', handleCanvasMouseDown, false);
+    drawingCanvas.addEventListener('mousemove', handleCanvasMouseMove, false);
+    drawingCanvas.addEventListener('mouseup', handleCanvasMouseUp, false);
+    drawingCanvas.addEventListener('mouseleave', handleCanvasMouseUp, false);
+  }
 }
 
 function handleImageUpload(e) {
   const file = (e && e.target && e.target.files && e.target.files[0]) || null;
   if (!file) return;
 
-  // 基本は image/* を受け入れる。拡張子にHEICが来る場合もあるため許容するが、ブラウザ依存で表示不可の可能性あり。
   const lowerName = (file.name || '').toLowerCase();
-  const allowedExt = [".jpg", ".jpeg", ".png", ".webp", ".heic", ".heif"];
+  const allowedExt = [".jpg", ".jpeg", ".png", ".webp"];
   const hasValidExt = allowedExt.some(ext => lowerName.endsWith(ext));
   const isImageMime = file.type && file.type.startsWith('image/');
 
   if (!isImageMime && !hasValidExt) {
-    imageStatus.textContent = "対応形式: JPG / PNG / WEBP / HEIC の画像を選んでください";
+    imageStatus.textContent = "対応形式: JPG / PNG / WEBP の画像を選んでください";
     imageStatus.classList.remove('success');
     imageStatus.classList.add('error');
     return;
@@ -296,7 +318,7 @@ function handleImageUpload(e) {
       previewImage.src = dataUrl;
       previewImage.style.display = 'block';
     }
-    // 隠していたキャンバスは一旦非表示。canvas は元画像を読み込んでから表示する。
+    if (drawingCanvas) drawingCanvas.style.display = 'none';
     if (previewCanvas) previewCanvas.style.display = 'none';
 
     const img = new Image();
@@ -304,8 +326,11 @@ function handleImageUpload(e) {
       currentState.originalImage = img;
       originalCanvas = createCanvasFromImage(img);
       processedCanvas = createCanvasFromImage(img);
-
-      // キャンバスに描画して表示
+      maskCanvas = document.createElement('canvas');
+      maskCanvas.width = originalCanvas.width;
+      maskCanvas.height = originalCanvas.height;
+      
+      // キャンバスに描画
       if (previewCanvas) {
         previewCanvas.style.display = 'block';
         previewImage.style.display = 'none';
@@ -313,14 +338,18 @@ function handleImageUpload(e) {
       }
 
       placeholderText.style.display = 'none';
+      drawingHint.style.display = 'none';
       imageStatus.textContent = '写真を読み込みました';
       imageStatus.classList.remove('error');
       imageStatus.classList.add('success');
-      if (beforeAfterToggle) beforeAfterToggle.style.display = 'block';
+      
+      // ペイントボタンを表示
+      if (startDrawBtn) startDrawBtn.style.display = 'inline-flex';
+      if (beforeAfterToggle) beforeAfterToggle.style.display = 'inline-flex';
     };
     img.onerror = () => {
-      // 表示不能
       if (previewImage) previewImage.style.display = 'none';
+      if (drawingCanvas) drawingCanvas.style.display = 'none';
       if (previewCanvas) previewCanvas.style.display = 'none';
       placeholderText.style.display = 'block';
       imageStatus.textContent = '写真を読み込めませんでした。別の画像を選んでください。';
@@ -350,8 +379,137 @@ function createCanvasFromImage(img) {
 }
 
 // ============================================================================
-// キャンバス描画
+// ペイント機能
 // ============================================================================
+
+function startDrawingMode() {
+  if (!originalCanvas) return;
+  
+  isDrawingMode = true;
+  
+  // ペイント用キャンバスをセットアップ
+  drawingCanvas.width = originalCanvas.width;
+  drawingCanvas.height = originalCanvas.height;
+  const ctx = drawingCanvas.getContext('2d');
+  ctx.drawImage(originalCanvas, 0, 0);
+  
+  // マスク画像があれば、その選択部分を半透明で表示
+  if (maskCanvas) {
+    ctx.fillStyle = 'rgba(100, 150, 255, 0.15)';
+    ctx.drawImage(maskCanvas, 0, 0);
+  }
+  
+  previewCanvas.style.display = 'none';
+  drawingCanvas.style.display = 'block';
+  drawingHint.style.display = 'block';
+  placeholderText.style.display = 'none';
+  
+  startDrawBtn.style.display = 'none';
+  stopDrawBtn.style.display = 'inline-flex';
+  resetMaskBtn.style.display = 'inline-flex';
+}
+
+function stopDrawingMode() {
+  isDrawingMode = false;
+  isDrawing = false;
+  
+  // ペイント用キャンバスから マスクキャンバスへコピー
+  if (maskCanvas) {
+    const ctx = maskCanvas.getContext('2d');
+    ctx.drawImage(drawingCanvas, 0, 0);
+  }
+  
+  drawingCanvas.style.display = 'none';
+  drawingHint.style.display = 'none';
+  previewCanvas.style.display = 'block';
+  redrawCanvas();
+  
+  startDrawBtn.style.display = 'inline-flex';
+  stopDrawBtn.style.display = 'none';
+  resetMaskBtn.style.display = 'inline-flex';
+}
+
+function resetMask() {
+  if (maskCanvas) {
+    const ctx = maskCanvas.getContext('2d');
+    ctx.clearRect(0, 0, maskCanvas.width, maskCanvas.height);
+  }
+  
+  if (isDrawingMode) {
+    // ペイントモード中なら、描画キャンバスをリセット
+    const ctx = drawingCanvas.getContext('2d');
+    ctx.drawImage(originalCanvas, 0, 0);
+  } else {
+    // プレビューを再描画
+    redrawCanvas();
+  }
+}
+
+// マウスイベント
+function handleCanvasMouseDown(e) {
+  if (!isDrawingMode) return;
+  isDrawing = true;
+  const rect = drawingCanvas.getBoundingClientRect();
+  const x = e.clientX - rect.left;
+  const y = e.clientY - rect.top;
+  const ctx = drawingCanvas.getContext('2d');
+  ctx.beginPath();
+  ctx.moveTo(x, y);
+}
+
+function handleCanvasMouseMove(e) {
+  if (!isDrawing) return;
+  const rect = drawingCanvas.getBoundingClientRect();
+  const x = e.clientX - rect.left;
+  const y = e.clientY - rect.top;
+  const ctx = drawingCanvas.getContext('2d');
+  ctx.strokeStyle = 'rgba(200, 200, 255, 0.8)';
+  ctx.lineWidth = 3;
+  ctx.lineCap = 'round';
+  ctx.lineJoin = 'round';
+  ctx.lineTo(x, y);
+  ctx.stroke();
+}
+
+function handleCanvasMouseUp() {
+  isDrawing = false;
+}
+
+// タッチイベント
+function handleCanvasTouchStart(e) {
+  if (!isDrawingMode) return;
+  e.preventDefault();
+  isDrawing = true;
+  const rect = drawingCanvas.getBoundingClientRect();
+  const touch = e.touches[0];
+  const x = touch.clientX - rect.left;
+  const y = touch.clientY - rect.top;
+  const ctx = drawingCanvas.getContext('2d');
+  ctx.beginPath();
+  ctx.moveTo(x, y);
+}
+
+function handleCanvasTouchMove(e) {
+  if (!isDrawing) return;
+  e.preventDefault();
+  const rect = drawingCanvas.getBoundingClientRect();
+  const touch = e.touches[0];
+  const x = touch.clientX - rect.left;
+  const y = touch.clientY - rect.top;
+  const ctx = drawingCanvas.getContext('2d');
+  ctx.strokeStyle = 'rgba(200, 200, 255, 0.8)';
+  ctx.lineWidth = 3;
+  ctx.lineCap = 'round';
+  ctx.lineJoin = 'round';
+  ctx.lineTo(x, y);
+  ctx.stroke();
+}
+
+function handleCanvasTouchEnd(e) {
+  if (!isDrawing) return;
+  e.preventDefault();
+  isDrawing = false;
+}
 
 function redrawCanvas() {
   if (!originalCanvas) return;
@@ -360,66 +518,123 @@ function redrawCanvas() {
   const ctx = previewCanvas.getContext("2d");
   previewCanvas.width = originalCanvas.width;
   previewCanvas.height = originalCanvas.height;
-  
   ctx.drawImage(originalCanvas, 0, 0);
 
-  if (isShowingAfter) {
-    // 外壁色を適用
+  if (isShowingAfter && maskCanvas) {
+    // マスク部分だけに色を反映
     const wallColor = WALL_COLORS.find(c => c.id === currentState.wall);
-    const roofColor = ROOF_COLORS.find(c => c.id === currentState.roof);
     const finish = FINISH_OPTIONS.find(f => f.id === currentState.finish);
 
     if (wallColor && finish) {
-      applyColorOverlay(previewCanvas, wallColor.value, finish.opacity);
-      applyFinishEffect(previewCanvas, finish.id);
+      applyColorOverlayWithMask(previewCanvas, maskCanvas, wallColor.value, finish.opacity);
+      applyFinishEffectWithMask(previewCanvas, maskCanvas, finish.id);
     }
   }
 }
 
-function applyColorOverlay(canvas, color, opacity) {
+function applyColorOverlayWithMask(canvas, mask, color, opacity) {
   const ctx = canvas.getContext("2d");
-  // 色を乗せる。multiply 合成で写真のディテールを残す
-  ctx.save();
-  ctx.globalCompositeOperation = 'multiply';
-  ctx.globalAlpha = opacity;
-  ctx.fillStyle = color;
-  ctx.fillRect(0, 0, canvas.width, canvas.height);
-  ctx.restore();
+  const maskCtx = mask.getContext('2d');
+  
+  // マスクの画像データを取得
+  const maskImageData = maskCtx.getImageData(0, 0, mask.width, mask.height);
+  const maskData = maskImageData.data;
+  
+  // キャンバスの画像データを取得
+  const canvasImageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+  const canvasData = canvasImageData.data;
+  
+  // 色を RGB に分解
+  const rgb = hexToRgb(color);
+  
+  // マスク領域に色を乗せる（multiply 合成の近似）
+  for (let i = 0; i < maskData.length; i += 4) {
+    const maskAlpha = maskData[i + 3]; // マスクのアルファ値
+    if (maskAlpha > 0) {
+      // この部分は選択されている
+      const pixelIdx = i;
+      const origR = canvasData[pixelIdx];
+      const origG = canvasData[pixelIdx + 1];
+      const origB = canvasData[pixelIdx + 2];
+      
+      // multiply 合成: 元の色 × 新しい色
+      canvasData[pixelIdx] = Math.round(origR * rgb.r / 255);
+      canvasData[pixelIdx + 1] = Math.round(origG * rgb.g / 255);
+      canvasData[pixelIdx + 2] = Math.round(origB * rgb.b / 255);
+      
+      // opacity でアルファを調整
+      const alpha = canvasData[pixelIdx + 3];
+      canvasData[pixelIdx + 3] = Math.min(255, alpha + (255 * opacity * maskAlpha / 255));
+    }
+  }
+  
+  ctx.putImageData(canvasImageData, 0, 0);
 }
 
-function applyFinishEffect(canvas, finishId) {
+function hexToRgb(hex) {
+  const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+  return result ? {
+    r: parseInt(result[1], 16),
+    g: parseInt(result[2], 16),
+    b: parseInt(result[3], 16)
+  } : { r: 0, g: 0, b: 0 };
+}
+
+function applyFinishEffectWithMask(canvas, mask, finishId) {
   const ctx = canvas.getContext('2d');
-  // 艶感を簡易表現: 艶ありはスクリーンで白いハイライトを少し乗せる
-  ctx.save();
+  const maskCtx = mask.getContext('2d');
+  
+  const maskImageData = maskCtx.getImageData(0, 0, mask.width, mask.height);
+  const maskData = maskImageData.data;
+  
+  const canvasImageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+  const canvasData = canvasImageData.data;
+  
+  let highlightR, highlightG, highlightB, highlightAlpha = 0;
+  
   if (finishId === 'gloss') {
-    ctx.globalCompositeOperation = 'screen';
-    ctx.globalAlpha = 0.08;
-    const g = ctx.createLinearGradient(0, 0, canvas.width, canvas.height);
-    g.addColorStop(0, 'rgba(255,255,255,0.18)');
-    g.addColorStop(1, 'rgba(255,255,255,0.02)');
-    ctx.fillStyle = g;
-    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    highlightR = 255; highlightG = 255; highlightB = 255;
+    highlightAlpha = 0.18;
   } else if (finishId === 'semi') {
-    ctx.globalCompositeOperation = 'screen';
-    ctx.globalAlpha = 0.06;
-    ctx.fillStyle = 'rgba(255,255,255,0.08)';
-    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    highlightR = 255; highlightG = 255; highlightB = 255;
+    highlightAlpha = 0.08;
   } else if (finishId === 'matte') {
-    // 少しコントラストを落として落ち着かせる
-    ctx.globalCompositeOperation = 'overlay';
-    ctx.globalAlpha = 0.04;
-    ctx.fillStyle = 'rgba(0,0,0,0.02)';
-    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    highlightR = 0; highlightG = 0; highlightB = 0;
+    highlightAlpha = 0.02;
   } else {
-    // 艶なし: ほぼ変更なし
+    return; // 艶なし
   }
-  ctx.restore();
+  
+  // マスク領域に艶効果を乗せる
+  for (let i = 0; i < maskData.length; i += 4) {
+    const maskAlpha = maskData[i + 3];
+    if (maskAlpha > 0) {
+      const pixelIdx = i;
+      const origR = canvasData[pixelIdx];
+      const origG = canvasData[pixelIdx + 1];
+      const origB = canvasData[pixelIdx + 2];
+      
+      if (finishId === 'gloss' || finishId === 'semi') {
+        // スクリーン合成（明るくする）
+        canvasData[pixelIdx] = Math.round(Math.min(255, origR + (255 - origR) * highlightAlpha));
+        canvasData[pixelIdx + 1] = Math.round(Math.min(255, origG + (255 - origG) * highlightAlpha));
+        canvasData[pixelIdx + 2] = Math.round(Math.min(255, origB + (255 - origB) * highlightAlpha));
+      } else if (finishId === 'matte') {
+        // オーバーレイ合成（少し暗くする）
+        canvasData[pixelIdx] = Math.round(origR * (1 - highlightAlpha));
+        canvasData[pixelIdx + 1] = Math.round(origG * (1 - highlightAlpha));
+        canvasData[pixelIdx + 2] = Math.round(origB * (1 - highlightAlpha));
+      }
+    }
+  }
+  
+  ctx.putImageData(canvasImageData, 0, 0);
 }
 
 function toggleBeforeAfter() {
   isShowingAfter = !isShowingAfter;
   beforeAfterToggle.textContent = isShowingAfter ? "ビフォーを見る" : "アフターを見る";
-  redrawCanvas();
+  if (!isDrawingMode) redrawCanvas();
 }
 
 // ============================================================================
