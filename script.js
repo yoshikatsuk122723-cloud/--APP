@@ -313,16 +313,9 @@ function handleImageUpload(e) {
   reader.onload = (ev) => {
     const dataUrl = ev.target.result;
 
-    // まずは img で即時プレビュー
-    if (previewImage) {
-      previewImage.src = dataUrl;
-      previewImage.style.display = 'block';
-    }
-    if (drawingCanvas) drawingCanvas.style.display = 'none';
-    if (previewCanvas) previewCanvas.style.display = 'none';
-
     const img = new Image();
     img.onload = () => {
+      // 画像情報を保存
       currentState.originalImage = img;
       originalCanvas = createCanvasFromImage(img);
       processedCanvas = createCanvasFromImage(img);
@@ -330,24 +323,32 @@ function handleImageUpload(e) {
       maskCanvas.width = originalCanvas.width;
       maskCanvas.height = originalCanvas.height;
       
-      // キャンバスに描画
-      if (previewCanvas) {
-        previewCanvas.style.display = 'block';
-        previewImage.style.display = 'none';
-        redrawCanvas();
+      // previewImage に表示（即座に表示される）
+      if (previewImage) {
+        previewImage.src = dataUrl;
+        previewImage.style.display = 'block';
       }
-
+      
+      // その他のキャンバスは隠す
+      if (drawingCanvas) drawingCanvas.style.display = 'none';
+      if (previewCanvas) previewCanvas.style.display = 'none';
+      
+      // プレースホルダーを隠す
       placeholderText.style.display = 'none';
       drawingHint.style.display = 'none';
+      
+      // ステータスを更新
       imageStatus.textContent = '写真を読み込みました';
       imageStatus.classList.remove('error');
       imageStatus.classList.add('success');
       
-      // ペイントボタンを表示
+      // ペイントボタンと操作ボタンを表示
       if (startDrawBtn) startDrawBtn.style.display = 'inline-flex';
       if (beforeAfterToggle) beforeAfterToggle.style.display = 'inline-flex';
     };
+    
     img.onerror = () => {
+      // 画像読み込み失敗時
       if (previewImage) previewImage.style.display = 'none';
       if (drawingCanvas) drawingCanvas.style.display = 'none';
       if (previewCanvas) previewCanvas.style.display = 'none';
@@ -356,13 +357,16 @@ function handleImageUpload(e) {
       imageStatus.classList.remove('success');
       imageStatus.classList.add('error');
     };
+    
     img.src = dataUrl;
   };
+  
   reader.onerror = () => {
     imageStatus.textContent = '写真を読み込めませんでした。別の画像を選んでください。';
     imageStatus.classList.remove('success');
     imageStatus.classList.add('error');
   };
+  
   reader.readAsDataURL(file);
 }
 
@@ -399,6 +403,7 @@ function startDrawingMode() {
     ctx.drawImage(maskCanvas, 0, 0);
   }
   
+  if (previewImage) previewImage.style.display = 'none';
   previewCanvas.style.display = 'none';
   drawingCanvas.style.display = 'block';
   drawingHint.style.display = 'block';
@@ -421,6 +426,7 @@ function stopDrawingMode() {
   
   drawingCanvas.style.display = 'none';
   drawingHint.style.display = 'none';
+  if (previewImage) previewImage.style.display = 'none';
   previewCanvas.style.display = 'block';
   redrawCanvas();
   
@@ -513,6 +519,10 @@ function handleCanvasTouchEnd(e) {
 
 function redrawCanvas() {
   if (!originalCanvas) return;
+
+  // previewCanvas を表示、previewImage を隠す
+  if (previewImage) previewImage.style.display = 'none';
+  previewCanvas.style.display = 'block';
 
   // 元画像をコピー
   const ctx = previewCanvas.getContext("2d");
