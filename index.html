@@ -18,10 +18,10 @@
     <!-- アップロード & プレビューセクション -->
     <section class="card upload-section">
       <div class="upload-header">
-        <label class="btn btn-primary btn-large" for="imageUpload">📸 写真をアップロード</label>
+        <label id="imageSelectBtn" class="btn btn-primary btn-large" for="imageUpload">📷 写真を選ぶ</label>
         <div id="imageStatus" class="status-badge">未アップロード</div>
       </div>
-      <input id="imageUpload" type="file" accept="image/*" style="display:none;" />
+      <input id="imageUpload" type="file" accept=".jpg,.jpeg,.png,.webp,image/*" capture="environment" style="display:none;" />
       
       <div class="preview-container">
         <div class="preview-controls">
@@ -137,38 +137,6 @@
     </section>
   </main>
 
-  <script src="script.js"></script>
-</body>
-</html>
-      <div class="save-list" id="savedList"></div>
-    </section>
-
-    <section class="card info-card">
-      <h2>確認メモ</h2>
-      <div class="info-grid">
-        <div>
-          <p class="label">高級感</p>
-          <p id="luxuryValue" class="info-value">--</p>
-        </div>
-        <div>
-          <p class="label">汚れやすさ</p>
-          <p id="riskDirt" class="info-value">--</p>
-        </div>
-        <div>
-          <p class="label">色褪せ</p>
-          <p id="riskFade" class="info-value">--</p>
-        </div>
-        <div>
-          <p class="label">雨だれ目立ち</p>
-          <p id="riskStreak" class="info-value">--</p>
-        </div>
-      </div>
-      <p id="colorAdvice" class="message">選択した色の注意点をここに表示します。</p>
-      <div class="warning-box" id="comboWarning"></div>
-      <div class="customer-comment" id="customerComment">--</div>
-      <p id="summaryText" class="message">保存や共有機能を使って、営業先でもすぐに再現できます。</p>
-    </section>
-  </main>
   <script src="script.js"></script>
 </body>
 </html>

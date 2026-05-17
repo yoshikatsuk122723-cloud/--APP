@@ -1,282 +1,647 @@
-const imageUpload = document.getElementById("imageUpload");
-const previewImage = document.getElementById("previewImage");
-const imagePreview = document.getElementById("imagePreview");
-const beforeAfterToggle = document.getElementById("beforeAfterToggle");
-const wallColorOptions = document.getElementById("wallColorOptions");
-const roofColorOptions = document.getElementById("roofColorOptions");
-const sashColorOptions = document.getElementById("sashColorOptions");
-const finishButtons = document.getElementById("finishOptions");
-const selectedWallSwatch = document.getElementById("selectedWallSwatch");
-const selectedRoofSwatch = document.getElementById("selectedRoofSwatch");
-const selectedSashSwatch = document.getElementById("selectedSashSwatch");
-const selectedWallColorName = document.getElementById("selectedWallColorName");
-const selectedRoofColorName = document.getElementById("selectedRoofColorName");
-const selectedSashColorName = document.getElementById("selectedSashColorName");
-const colorAdvice = document.getElementById("colorAdvice");
-const riskDirt = document.getElementById("riskDirt");
-const riskFade = document.getElementById("riskFade");
-const riskStreak = document.getElementById("riskStreak");
-const impressionText = document.getElementById("impressionText");
-const comboWarning = document.getElementById("comboWarning");
-const summaryText = document.getElementById("summaryText");
-const luxuryValue = document.getElementById("luxuryValue");
-const customerComment = document.getElementById("customerComment");
+// ============================================================================
+// データ定義
+// ============================================================================
 
-const wallColors = [
+const WALL_COLORS = [
   {
     id: "ivory",
     name: "アイボリー",
     value: "#f5f0e6",
-    advice: "明るく柔らかい印象です。汚れや雨だれ跡はやや目立ちやすいので、実際の住宅写真と比べて確認しましょう。",
-    risks: { dirt: "やや高め", fade: "低め", streak: "中" },
-    luxury: "やや高め",
-    impression: "高級感と柔らかさが両立します。"
+    risks: { dirt: "高め", fade: "低め", streak: "やや高め", heat: "低め" },
+    comment: "清潔感あり。雨だれや黒ずみに注意。",
+    rating: "4.0"
   },
   {
     id: "beige",
     name: "ベージュ",
     value: "#d6c5aa",
-    advice: "自然で落ち着いた色味です。直射日光で色褪せしやすいため、外観全体のバランスに注意してください。",
-    risks: { dirt: "中", fade: "中", streak: "中" },
-    luxury: "中程度",
-    impression: "ナチュラルで親しみやすい印象です。"
+    risks: { dirt: "低め", fade: "中", streak: "中", heat: "中" },
+    comment: "汚れが目立ちにくい。失敗しにくい人気色。",
+    rating: "4.5"
   },
   {
     id: "gray",
     name: "グレー",
     value: "#9ca3af",
-    advice: "モダンな雰囲気です。落ち着きがありますが、陰影で色味が変わるため、実際の光の当たり方も確認してください。",
-    risks: { dirt: "中", fade: "中", streak: "やや高め" },
-    luxury: "高め",
-    impression: "モダンで洗練された雰囲気を作ります。"
+    risks: { dirt: "中", fade: "やや高め", streak: "中", heat: "中" },
+    comment: "落ち着いた印象。色味によって冷たく見える場合あり。",
+    rating: "4.3"
   },
   {
     id: "charcoal",
     name: "チャコール",
     value: "#4b5563",
-    advice: "重厚感のある色です。雨だれや光の反射で濃淡が出やすいので、しっかり確認してください。",
-    risks: { dirt: "低め", fade: "やや高め", streak: "高め" },
-    luxury: "高め",
-    impression: "落ち着きと高級感が強い色です。"
+    risks: { dirt: "低め", fade: "やや高め", streak: "中", heat: "高め" },
+    comment: "高級感あり。重たく見える場合あり。",
+    rating: "4.2"
   },
   {
     id: "black",
     name: "ブラック",
     value: "#1f2937",
-    advice: "引き締まった印象です。汚れや色褪せが目立ちやすいので、お手入れ頻度も説明しましょう。",
-    risks: { dirt: "高め", fade: "高め", streak: "高め" },
-    luxury: "高め",
-    impression: "高級感と重厚感がはっきりした印象です。"
+    risks: { dirt: "低め", fade: "高め", streak: "高め", heat: "非常に高め" },
+    comment: "かっこいい。熱を持ちやすい。色褪せ注意。",
+    rating: "3.8"
   },
   {
     id: "brown",
     name: "ブラウン",
     value: "#8b5e3c",
-    advice: "温かみがあり安心感のある色です。窓や屋根との相性を確認しやすい色です。",
-    risks: { dirt: "中", fade: "中", streak: "中" },
-    luxury: "中程度",
-    impression: "ナチュラルで安心感のある雰囲気です。"
+    risks: { dirt: "中", fade: "中", streak: "中", heat: "中" },
+    comment: "温かみあり。暗すぎると重たい印象。",
+    rating: "4.4"
   }
 ];
 
-const roofColors = [
+const ROOF_COLORS = [
   { id: "roof-darkgray", name: "ダークグレー", value: "#4f575f" },
   { id: "roof-black", name: "ブラック", value: "#1f2937" },
   { id: "roof-brown", name: "ブラウン", value: "#7c513d" },
   { id: "roof-slate", name: "スレート", value: "#6b7280" }
 ];
 
-const sashColors = [
+const SASH_COLORS = [
   { id: "sash-white", name: "ホワイト", value: "#f8fafc" },
   { id: "sash-brown", name: "ブラウン", value: "#6b4226" },
   { id: "sash-black", name: "ブラック", value: "#111827" },
   { id: "sash-silver", name: "シルバー", value: "#d1d5db" }
 ];
 
-const finishOptions = [
-  { id: "gloss", name: "艶あり", alpha: 0.24, note: "光をきれいに反射し、濃く高級感のある仕上がりになります。" },
-  { id: "semi", name: "3分艶", alpha: 0.16, note: "自然な光沢で落ち着いた雰囲気になります。" },
-  { id: "matte", name: "艶なし", alpha: 0.10, note: "光の反射が少なく、落ち着いたマットな質感です。" }
+const FINISH_OPTIONS = [
+  { id: "gloss", name: "艶あり", opacity: 0.24 },
+  { id: "semi", name: "5分艶", opacity: 0.20 },
+  { id: "matte", name: "3分艶", opacity: 0.16 },
+  { id: "none", name: "艶なし", opacity: 0.10 }
 ];
 
-let selectedWallColor = wallColors[0];
-let selectedRoofColor = roofColors[0];
-let selectedSashColor = sashColors[0];
-let selectedFinish = finishOptions[0];
-let isAfterView = true;
+const AI_THEMES = [
+  {
+    id: "luxury",
+    name: "🏆 高級感",
+    comment: "高級感があり人気の組み合わせ。新築のように見えます。",
+    wall: "charcoal",
+    roof: "roof-black",
+    sash: "sash-black",
+    finish: "gloss"
+  },
+  {
+    id: "natural",
+    name: "🌿 ナチュラル",
+    comment: "自然で落ち着いた印象。周囲と調和しやすいです。",
+    wall: "beige",
+    roof: "roof-brown",
+    sash: "sash-brown",
+    finish: "matte"
+  },
+  {
+    id: "modern",
+    name: "🎨 モダン",
+    comment: "洗練されたモダンな外観。スタイリッシュです。",
+    wall: "gray",
+    roof: "roof-darkgray",
+    sash: "sash-black",
+    finish: "semi"
+  },
+  {
+    id: "calm",
+    name: "😌 落ち着き",
+    comment: "落ち着きのある穏やかな印象。家族向けです。",
+    wall: "brown",
+    roof: "roof-brown",
+    sash: "sash-brown",
+    finish: "matte"
+  },
+  {
+    id: "popular",
+    name: "⭐ 人気系",
+    comment: "最も選ばれている組み合わせ。万能な選択肢です。",
+    wall: "ivory",
+    roof: "roof-darkgray",
+    sash: "sash-brown",
+    finish: "semi"
+  }
+];
 
-function createButtons(list, container, buttonClass, onClick) {
-  list.forEach((item) => {
-    const button = document.createElement("button");
-    button.type = "button";
-    button.className = buttonClass;
-    button.textContent = item.name;
-    button.dataset.id = item.id;
-    button.addEventListener("click", () => onClick(item.id));
-    container.appendChild(button);
+// ============================================================================
+// グローバル変数
+// ============================================================================
+
+let originalCanvas = null;
+let processedCanvas = null;
+let isShowingAfter = true;
+
+let currentState = {
+  wall: "ivory",
+  roof: "roof-darkgray",
+  sash: "sash-white",
+  finish: "semi",
+  originalImage: null
+};
+
+// ============================================================================
+// DOM要素
+// ============================================================================
+
+const imageUpload = document.getElementById("imageUpload");
+const imageStatus = document.getElementById("imageStatus");
+const placeholderText = document.getElementById("placeholderText");
+const previewCanvas = document.getElementById("previewCanvas");
+const beforeAfterToggle = document.getElementById("beforeAfterToggle");
+
+const wallColorGrid = document.getElementById("wallColorGrid");
+const roofColorGrid = document.getElementById("roofColorGrid");
+const sashColorGrid = document.getElementById("sashColorGrid");
+const finishGrid = document.getElementById("finishGrid");
+
+const wallSwatchDisplay = document.getElementById("wallSwatchDisplay");
+const roofSwatchDisplay = document.getElementById("roofSwatchDisplay");
+const sashSwatchDisplay = document.getElementById("sashSwatchDisplay");
+const finishSwatchDisplay = document.getElementById("finishSwatchDisplay");
+
+const wallColorDisplay = document.getElementById("wallColorDisplay");
+const roofColorDisplay = document.getElementById("roofColorDisplay");
+const sashColorDisplay = document.getElementById("sashColorDisplay");
+const finishDisplay = document.getElementById("finishDisplay");
+
+const riskList = document.getElementById("riskList");
+const siteFeedback = document.getElementById("siteFeedback");
+const comboAdvice = document.getElementById("comboAdvice");
+
+const saveName = document.getElementById("saveName");
+const savePatternBtn = document.getElementById("savePatternBtn");
+const copyShareUrlBtn = document.getElementById("copyShareUrlBtn");
+const savedPatternsList = document.getElementById("savedPatternsList");
+
+const themeGrid = document.getElementById("themeGrid");
+const themeComment = document.getElementById("themeComment");
+
+// ============================================================================
+// 初期化
+// ============================================================================
+
+function init() {
+  renderWallColors();
+  renderRoofColors();
+  renderSashColors();
+  renderFinishOptions();
+  renderThemes();
+  setupEventListeners();
+  updateDisplay();
+  loadSavedPatterns();
+}
+
+// ============================================================================
+// ボタン描画
+// ============================================================================
+
+function renderWallColors() {
+  wallColorGrid.innerHTML = "";
+  WALL_COLORS.forEach(color => {
+    const btn = document.createElement("button");
+    btn.className = "color-button";
+    btn.textContent = color.name;
+    btn.style.background = "linear-gradient(180deg, " + color.value + " 0%, rgba(255,255,255,0.06) 100%)";
+    btn.onclick = () => { selectWallColor(color.id); };
+    if (currentState.wall === color.id) btn.classList.add("selected");
+    wallColorGrid.appendChild(btn);
   });
 }
 
-function selectWallColor(id) {
-  selectedWallColor = wallColors.find((item) => item.id === id) || wallColors[0];
-  updateUI();
-}
-
-function selectRoofColor(id) {
-  selectedRoofColor = roofColors.find((item) => item.id === id) || roofColors[0];
-  updateUI();
-}
-
-function selectSashColor(id) {
-  selectedSashColor = sashColors.find((item) => item.id === id) || sashColors[0];
-  updateUI();
-}
-
-function selectFinish(id) {
-  selectedFinish = finishOptions.find((item) => item.id === id) || finishOptions[0];
-  updateFinishUI();
-}
-
-function updateFinishUI() {
-  document.querySelectorAll(".finish-button").forEach((button) => {
-    button.classList.toggle("selected", button.dataset.id === selectedFinish.id);
+function renderRoofColors() {
+  roofColorGrid.innerHTML = "";
+  ROOF_COLORS.forEach(color => {
+    const btn = document.createElement("button");
+    btn.className = "option-button";
+    btn.textContent = color.name;
+    btn.style.background = color.value;
+    btn.onclick = () => { selectRoofColor(color.id); };
+    if (currentState.roof === color.id) btn.classList.add("selected");
+    roofColorGrid.appendChild(btn);
   });
-  updateUI();
 }
 
-function updateUI() {
-  document.querySelectorAll(".color-button").forEach((button) => {
-    button.classList.toggle("selected", button.dataset.id === selectedWallColor.id);
+function renderSashColors() {
+  sashColorGrid.innerHTML = "";
+  SASH_COLORS.forEach(color => {
+    const btn = document.createElement("button");
+    btn.className = "option-button";
+    btn.textContent = color.name;
+    btn.style.background = color.value;
+    btn.onclick = () => { selectSashColor(color.id); };
+    if (currentState.sash === color.id) btn.classList.add("selected");
+    sashColorGrid.appendChild(btn);
   });
-  document.querySelectorAll(".option-button").forEach((button) => {
-    if (button.parentNode === roofColorOptions) {
-      button.classList.toggle("selected", button.dataset.id === selectedRoofColor.id);
-    } else {
-      button.classList.toggle("selected", button.dataset.id === selectedSashColor.id);
-    }
+}
+
+function renderFinishOptions() {
+  finishGrid.innerHTML = "";
+  FINISH_OPTIONS.forEach(option => {
+    const btn = document.createElement("button");
+    btn.className = "finish-button";
+    btn.textContent = option.name;
+    btn.onclick = () => { selectFinish(option.id); };
+    if (currentState.finish === option.id) btn.classList.add("selected");
+    finishGrid.appendChild(btn);
   });
-  document.querySelectorAll(".finish-button").forEach((button) => {
-    button.classList.toggle("selected", button.dataset.id === selectedFinish.id);
+}
+
+function renderThemes() {
+  themeGrid.innerHTML = "";
+  AI_THEMES.forEach(theme => {
+    const btn = document.createElement("button");
+    btn.className = "theme-button";
+    btn.textContent = theme.name;
+    btn.onclick = () => { applyTheme(theme); };
+    themeGrid.appendChild(btn);
   });
-
-  selectedWallSwatch.style.background = selectedWallColor.value;
-  selectedRoofSwatch.style.background = selectedRoofColor.value;
-  selectedSashSwatch.style.background = selectedSashColor.value;
-  selectedWallColorName.textContent = selectedWallColor.name;
-  selectedRoofColorName.textContent = selectedRoofColor.name;
-  selectedSashColorName.textContent = selectedSashColor.name;
-
-  colorAdvice.textContent = `${selectedWallColor.advice} ${selectedFinish.note}`;
-  luxuryValue.textContent = selectedWallColor.luxury;
-  impressionText.textContent = selectedWallColor.impression;
-  riskDirt.textContent = selectedWallColor.risks.dirt;
-  riskFade.textContent = selectedWallColor.risks.fade;
-  riskStreak.textContent = selectedWallColor.risks.streak;
-  updateComboWarning();
-  updateCustomerComment();
-  updateSummary();
-  updateImageOverlay();
 }
 
-function updateComboWarning() {
-  const wall = selectedWallColor.id;
-  const roof = selectedRoofColor.id;
-  const sash = selectedSashColor.id;
-  let message = "";
+// ============================================================================
+// 写真アップロード
+// ============================================================================
 
-  if ((wall === "black" || wall === "charcoal") && roof === "roof-brown") {
-    message = "外壁が濃い色のとき、屋根に濃い茶色を合わせると少し重たく見える可能性があります。";
-  }
-  if ((wall === "ivory" || wall === "beige") && sash === "sash-black") {
-    message = "明るい外壁に黒いサッシはコントラストが強くなるので、実物で確認しましょう。";
-  }
-  if ((wall === "gray" || wall === "charcoal") && sash === "sash-white") {
-    message = "落ち着いた外壁に白いサッシは、縁が目立ちやすい組み合わせです。";
-  }
-  if (wall === "brown" && roof === "roof-black" && sash === "sash-white") {
-    message = "ブラウン外壁に黒い屋根と白いサッシは、ややコントラストが強くなる可能性があります。";
-  }
-
-  comboWarning.textContent = message;
-  comboWarning.style.display = message ? "block" : "none";
+function setupEventListeners() {
+  imageUpload.addEventListener("change", handleImageUpload);
+  // ラベル押下で input が開かない場合のフォールバック
+  const imageSelectBtn = document.getElementById("imageSelectBtn");
+  if (imageSelectBtn) imageSelectBtn.addEventListener('click', () => imageUpload.click());
+  beforeAfterToggle.addEventListener("click", toggleBeforeAfter);
+  savePatternBtn.addEventListener("click", savePattern);
+  copyShareUrlBtn.addEventListener("click", copyShareUrl);
 }
 
-function updateCustomerComment() {
-  const base = `この組み合わせは${selectedWallColor.name}の外壁と${selectedRoofColor.name}の屋根、${selectedSashColor.name}のサッシで構成されています。`;
-  let extra = "";
-
-  if (selectedWallColor.id === "ivory" || selectedWallColor.id === "beige") {
-    extra = "明るく柔らかい色味で、汚れが目立ちにくい組み合わせです。";
-  } else if (selectedWallColor.id === "gray") {
-    extra = "モダンで人気のある配色です。バランスがよく幅広い住宅に似合います。";
-  } else if (selectedWallColor.id === "charcoal" || selectedWallColor.id === "black") {
-    extra = "引き締まった高級感があり、重厚感のある仕上がりになります。";
-  } else if (selectedWallColor.id === "brown") {
-    extra = "温かみがあり落ち着いた雰囲気です。周囲の景色と合わせやすいです。";
-  }
-
-  if (comboWarning.style.display === "block") {
-    extra += " 配色の重さに注意し、お客様としっかり確認してください。";
-  }
-
-  customerComment.textContent = base + extra;
-}
-
-function updateSummary() {
-  summaryText.textContent = `写真を見ながら色のバランスを確認し、お客様と違和感がないか一緒にチェックしましょう。`;
-}
-
-function updateImageOverlay() {
-  const mask = imagePreview.querySelector(".preview-mask");
-  if (!previewImage.src) {
-    mask.style.background = "rgba(255,255,255,0.42)";
+function handleImageUpload(e) {
+  const file = e.target.files[0];
+  if (!file) return;
+  // ファイル形式チェック（拡張子も許可）
+  const validTypes = ["image/jpeg", "image/png", "image/webp", "image/jpg"];
+  const allowedExt = [".jpg", ".jpeg", ".png", ".webp"];
+  const lowerName = file.name.toLowerCase();
+  const hasValidExt = allowedExt.some(ext => lowerName.endsWith(ext));
+  if (!validTypes.includes(file.type) && !hasValidExt) {
+    imageStatus.textContent = "対応形式: JPG / PNG / WEBP を選択してください";
+    imageStatus.classList.remove("success");
+    imageStatus.classList.add("error");
     return;
   }
-  mask.style.background = isAfterView ? hexToRgba(selectedWallColor.value, selectedFinish.alpha) : "rgba(255,255,255,0.42)";
-}
 
-function hexToRgba(hex, alpha) {
-  const value = hex.replace("#", "");
-  const num = parseInt(value, 16);
-  const r = (num >> 16) & 255;
-  const g = (num >> 8) & 255;
-  const b = num & 255;
-  return `rgba(${r}, ${g}, ${b}, ${alpha})`;
-}
-
-imageUpload.addEventListener("change", (event) => {
-  const file = event.target.files && event.target.files[0];
-  if (!file) {
-    previewImage.src = "";
-    imagePreview.querySelector(".placeholder").style.display = "block";
-    updateImageOverlay();
-    return;
-  }
   const reader = new FileReader();
-  reader.onload = () => {
-    previewImage.src = reader.result;
-    imagePreview.querySelector(".placeholder").style.display = "none";
-    updateImageOverlay();
+  reader.onload = (event) => {
+    const img = new Image();
+    img.crossOrigin = 'anonymous';
+    img.onload = () => {
+      currentState.originalImage = img;
+      originalCanvas = createCanvasFromImage(img);
+      processedCanvas = createCanvasFromImage(img);
+
+      // 描画
+      placeholderText.style.display = "none";
+      imageStatus.textContent = "写真を読み込みました";
+      imageStatus.classList.remove("error");
+      imageStatus.classList.add("success");
+      beforeAfterToggle.style.display = "block";
+      redrawCanvas();
+      console.log("写真をアップロード:", img.width, "x", img.height);
+    };
+    img.onerror = () => {
+      imageStatus.textContent = "写真の読み込みに失敗しました";
+      imageStatus.classList.remove("success");
+      imageStatus.classList.add("error");
+    };
+    img.src = event.target.result;
   };
   reader.readAsDataURL(file);
-});
+}
 
-beforeAfterToggle.addEventListener("click", () => {
-  isAfterView = !isAfterView;
-  beforeAfterToggle.textContent = isAfterView ? "ビフォー表示" : "アフター表示";
-  updateImageOverlay();
-});
+function createCanvasFromImage(img) {
+  const canvas = document.createElement("canvas");
+  const maxW = 1100;
+  const maxH = 800;
+  const ratio = Math.min(maxW / img.width, maxH / img.height, 1);
+  canvas.width = Math.round(img.width * ratio);
+  canvas.height = Math.round(img.height * ratio);
+  const ctx = canvas.getContext("2d");
+  ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+  return canvas;
+}
 
-createButtons(wallColors, wallColorOptions, "color-button", selectWallColor);
-createButtons(roofColors, roofColorOptions, "option-button", selectRoofColor);
-createButtons(sashColors, sashColorOptions, "option-button", selectSashColor);
-finishOptions.forEach((option) => {
-  const button = document.createElement("button");
-  button.type = "button";
-  button.className = "finish-button";
-  button.textContent = option.name;
-  button.dataset.id = option.id;
-  button.addEventListener("click", () => selectFinish(option.id));
-  finishButtons.appendChild(button);
+// ============================================================================
+// キャンバス描画
+// ============================================================================
+
+function redrawCanvas() {
+  if (!originalCanvas) return;
+
+  // 元画像をコピー
+  const ctx = previewCanvas.getContext("2d");
+  previewCanvas.width = originalCanvas.width;
+  previewCanvas.height = originalCanvas.height;
+  
+  ctx.drawImage(originalCanvas, 0, 0);
+
+  if (isShowingAfter) {
+    // 外壁色を適用
+    const wallColor = WALL_COLORS.find(c => c.id === currentState.wall);
+    const roofColor = ROOF_COLORS.find(c => c.id === currentState.roof);
+    const finish = FINISH_OPTIONS.find(f => f.id === currentState.finish);
+
+    if (wallColor && finish) {
+      applyColorOverlay(previewCanvas, wallColor.value, finish.opacity);
+      applyFinishEffect(previewCanvas, finish.id);
+    }
+  }
+}
+
+function applyColorOverlay(canvas, color, opacity) {
+  const ctx = canvas.getContext("2d");
+  // 色を乗せる。multiply 合成で写真のディテールを残す
+  ctx.save();
+  ctx.globalCompositeOperation = 'multiply';
+  ctx.globalAlpha = opacity;
+  ctx.fillStyle = color;
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+  ctx.restore();
+}
+
+function applyFinishEffect(canvas, finishId) {
+  const ctx = canvas.getContext('2d');
+  // 艶感を簡易表現: 艶ありはスクリーンで白いハイライトを少し乗せる
+  ctx.save();
+  if (finishId === 'gloss') {
+    ctx.globalCompositeOperation = 'screen';
+    ctx.globalAlpha = 0.08;
+    const g = ctx.createLinearGradient(0, 0, canvas.width, canvas.height);
+    g.addColorStop(0, 'rgba(255,255,255,0.18)');
+    g.addColorStop(1, 'rgba(255,255,255,0.02)');
+    ctx.fillStyle = g;
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+  } else if (finishId === 'semi') {
+    ctx.globalCompositeOperation = 'screen';
+    ctx.globalAlpha = 0.06;
+    ctx.fillStyle = 'rgba(255,255,255,0.08)';
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+  } else if (finishId === 'matte') {
+    // 少しコントラストを落として落ち着かせる
+    ctx.globalCompositeOperation = 'overlay';
+    ctx.globalAlpha = 0.04;
+    ctx.fillStyle = 'rgba(0,0,0,0.02)';
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+  } else {
+    // 艶なし: ほぼ変更なし
+  }
+  ctx.restore();
+}
+
+function toggleBeforeAfter() {
+  isShowingAfter = !isShowingAfter;
+  beforeAfterToggle.textContent = isShowingAfter ? "ビフォーを見る" : "アフターを見る";
+  redrawCanvas();
+}
+
+// ============================================================================
+// 色選択
+// ============================================================================
+
+function selectWallColor(colorId) {
+  currentState.wall = colorId;
+  updateDisplay();
+  renderWallColors();
+  redrawCanvas();
+}
+
+function selectRoofColor(colorId) {
+  currentState.roof = colorId;
+  updateDisplay();
+  renderRoofColors();
+  redrawCanvas();
+}
+
+function selectSashColor(colorId) {
+  currentState.sash = colorId;
+  updateDisplay();
+  renderSashColors();
+  redrawCanvas();
+}
+
+function selectFinish(finishId) {
+  currentState.finish = finishId;
+  updateDisplay();
+  renderFinishOptions();
+  redrawCanvas();
+}
+
+function applyTheme(theme) {
+  currentState.wall = theme.wall;
+  currentState.roof = theme.roof;
+  currentState.sash = theme.sash;
+  currentState.finish = theme.finish;
+  
+  themeComment.textContent = theme.comment;
+  
+  updateDisplay();
+  renderWallColors();
+  renderRoofColors();
+  renderSashColors();
+  renderFinishOptions();
+  redrawCanvas();
+}
+
+// ============================================================================
+// 表示更新
+// ============================================================================
+
+function updateDisplay() {
+  const wallColor = WALL_COLORS.find(c => c.id === currentState.wall);
+  const roofColor = ROOF_COLORS.find(c => c.id === currentState.roof);
+  const sashColor = SASH_COLORS.find(c => c.id === currentState.sash);
+  const finish = FINISH_OPTIONS.find(f => f.id === currentState.finish);
+
+  // 色スワッチ
+  if (wallColor) {
+    wallSwatchDisplay.style.backgroundColor = wallColor.value;
+    wallColorDisplay.textContent = wallColor.name;
+  }
+  if (roofColor) {
+    roofSwatchDisplay.style.backgroundColor = roofColor.value;
+    roofColorDisplay.textContent = roofColor.name;
+  }
+  if (sashColor) {
+    sashSwatchDisplay.style.backgroundColor = sashColor.value;
+    sashColorDisplay.textContent = sashColor.name;
+  }
+  if (finish) {
+    finishSwatchDisplay.style.backgroundColor = "#e0e0e0";
+    finishSwatchDisplay.textContent = finish.name;
+    finishDisplay.textContent = finish.name;
+  }
+
+  // リスク表示
+  if (wallColor) {
+    updateRiskDisplay(wallColor);
+    siteFeedback.textContent = wallColor.comment;
+  }
+
+  // 配色相性診断
+  updateComboAdvice();
+}
+
+function updateRiskDisplay(wallColor) {
+  riskList.innerHTML = "";
+  
+  const risks = [
+    { label: "雨だれ", risk: wallColor.risks.streak },
+    { label: "黒ずみ", risk: wallColor.risks.dirt },
+    { label: "色褪せ", risk: wallColor.risks.fade },
+    { label: "熱の持ちやすさ", risk: wallColor.risks.heat }
+  ];
+
+  // おすすめ度を必ず表示
+  if (wallColor.rating) {
+    risks.push({ label: "おすすめ度", risk: wallColor.rating + " /5" });
+  }
+
+  risks.forEach(r => {
+    const li = document.createElement("li");
+    li.innerHTML = `<strong>${r.label}:</strong> ${r.risk}`;
+    riskList.appendChild(li);
+  });
+}
+
+function updateComboAdvice() {
+  const wallColor = WALL_COLORS.find(c => c.id === currentState.wall);
+  const roofColor = ROOF_COLORS.find(c => c.id === currentState.roof);
+  const sashColor = SASH_COLORS.find(c => c.id === currentState.sash);
+
+  let advice = "✓ ";
+  
+  if (wallColor && wallColor.id === "black") {
+    advice += "ブラックは高級感が出ますが、熱に注意してください。";
+  } else if (wallColor && wallColor.id === "ivory") {
+    advice += "アイボリーは明るく優しい印象です。雨だれ対策をお勧めします。";
+  } else {
+    advice += "バランスの取れた配色です。外観が一体感を持ちます。";
+  }
+
+  comboAdvice.textContent = advice;
+}
+
+// ============================================================================
+// 保存・共有
+// ============================================================================
+
+function savePattern() {
+  const name = saveName.value.trim();
+  if (!name) {
+    alert("保存名を入力してください");
+    return;
+  }
+
+  const patterns = JSON.parse(localStorage.getItem("wallPatterns") || "[]");
+  patterns.push({
+    id: Date.now(),
+    name,
+    wall: currentState.wall,
+    roof: currentState.roof,
+    sash: currentState.sash,
+    finish: currentState.finish
+  });
+  
+  localStorage.setItem("wallPatterns", JSON.stringify(patterns));
+  saveName.value = "";
+  loadSavedPatterns();
+  alert("保存しました！");
+}
+
+function loadSavedPatterns() {
+  const patterns = JSON.parse(localStorage.getItem("wallPatterns") || "[]");
+  savedPatternsList.innerHTML = "";
+
+  if (patterns.length === 0) {
+    savedPatternsList.innerHTML = "<p style='color: #999;'>保存されたパターンはありません</p>";
+    return;
+  }
+
+  patterns.forEach(pattern => {
+    const wallColor = WALL_COLORS.find(c => c.id === pattern.wall);
+    const roofColor = ROOF_COLORS.find(c => c.id === pattern.roof);
+    const sashColor = SASH_COLORS.find(c => c.id === pattern.sash);
+
+    const card = document.createElement("div");
+    card.className = "pattern-card";
+    card.innerHTML = `
+      <p class="pattern-card-name">${pattern.name}</p>
+      <div class="pattern-preview">
+        <div class="pattern-color" style="background-color: ${wallColor.value};"></div>
+        <div class="pattern-color" style="background-color: ${roofColor.value};"></div>
+        <div class="pattern-color" style="background-color: ${sashColor.value};"></div>
+      </div>
+      <div class="pattern-actions">
+        <button class="pattern-load" onclick="loadPattern(${pattern.id})">読み込む</button>
+        <button class="pattern-delete" onclick="deletePattern(${pattern.id})">削除</button>
+      </div>
+    `;
+    savedPatternsList.appendChild(card);
+  });
+}
+
+function loadPattern(id) {
+  const patterns = JSON.parse(localStorage.getItem("wallPatterns") || "[]");
+  const pattern = patterns.find(p => p.id === id);
+  if (pattern) {
+    currentState.wall = pattern.wall;
+    currentState.roof = pattern.roof;
+    currentState.sash = pattern.sash;
+    currentState.finish = pattern.finish;
+    updateDisplay();
+    renderWallColors();
+    renderRoofColors();
+    renderSashColors();
+    renderFinishOptions();
+    redrawCanvas();
+  }
+}
+
+function deletePattern(id) {
+  if (confirm("削除してもよろしいですか？")) {
+    let patterns = JSON.parse(localStorage.getItem("wallPatterns") || "[]");
+    patterns = patterns.filter(p => p.id !== id);
+    localStorage.setItem("wallPatterns", JSON.stringify(patterns));
+    loadSavedPatterns();
+  }
+}
+
+function copyShareUrl() {
+  const url = `${window.location.origin}${window.location.pathname}?wall=${currentState.wall}&roof=${currentState.roof}&sash=${currentState.sash}&finish=${currentState.finish}`;
+  navigator.clipboard.writeText(url).then(() => {
+    alert("URLをコピーしました！");
+  }).catch(() => {
+    alert("コピーに失敗しました");
+  });
+}
+
+// ============================================================================
+// URLパラメータから復元
+// ============================================================================
+
+function loadFromUrl() {
+  const params = new URLSearchParams(window.location.search);
+  if (params.has("wall")) currentState.wall = params.get("wall");
+  if (params.has("roof")) currentState.roof = params.get("roof");
+  if (params.has("sash")) currentState.sash = params.get("sash");
+  if (params.has("finish")) currentState.finish = params.get("finish");
+  
+  updateDisplay();
+  renderWallColors();
+  renderRoofColors();
+  renderSashColors();
+  renderFinishOptions();
+}
+
+// ============================================================================
+// 起動
+// ============================================================================
+
+document.addEventListener("DOMContentLoaded", () => {
+  loadFromUrl();
+  init();
 });
-updateUI();
