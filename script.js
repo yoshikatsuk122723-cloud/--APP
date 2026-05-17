@@ -271,9 +271,75 @@ function renderThemes() {
 const previewImage = document.getElementById('previewImage');
 
 function setupEventListeners() {
-  if (imageUpload) imageUpload.addEventListener('change', handleImageUpload);
+  // 写真アップロード処理
   const imageSelectBtn = document.getElementById('imageSelectBtn');
-  if (imageSelectBtn && imageUpload) imageSelectBtn.addEventListener('click', (e) => { e.preventDefault(); imageUpload.click(); });
+  if (imageSelectBtn && imageUpload) {
+    imageSelectBtn.addEventListener('click', () => {
+      imageUpload.click();
+    });
+  }
+  
+  if (imageUpload) {
+    imageUpload.addEventListener('change', (event) => {
+      const file = event.target.files[0];
+      if (!file) return;
+
+      const reader = new FileReader();
+
+      reader.onload = () => {
+        // 画像をstateに保存
+        currentState.originalImage = reader.result;
+        
+        // プレビュー画像に表示
+        if (previewImage) {
+          previewImage.src = reader.result;
+          previewImage.style.display = 'block';
+        }
+        
+        // 他のキャンバスは隠す
+        if (drawingCanvas) drawingCanvas.style.display = 'none';
+        if (previewCanvas) previewCanvas.style.display = 'none';
+        
+        // プレースホルダーを隠す
+        if (placeholderText) placeholderText.style.display = 'none';
+        if (drawingHint) drawingHint.style.display = 'none';
+        
+        // ステータスを更新
+        if (imageStatus) {
+          imageStatus.textContent = '写真を読み込みました';
+          imageStatus.classList.remove('error');
+          imageStatus.classList.add('success');
+        }
+        
+        // 後処理：canvasに画像を読み込む
+        const img = new Image();
+        img.onload = () => {
+          originalCanvas = createCanvasFromImage(img);
+          processedCanvas = createCanvasFromImage(img);
+          maskCanvas = document.createElement('canvas');
+          maskCanvas.width = originalCanvas.width;
+          maskCanvas.height = originalCanvas.height;
+          
+          // ボタンを表示
+          if (startDrawBtn) startDrawBtn.style.display = 'inline-flex';
+          if (beforeAfterToggle) beforeAfterToggle.style.display = 'inline-flex';
+        };
+        img.src = reader.result;
+      };
+
+      reader.onerror = () => {
+        if (imageStatus) {
+          imageStatus.textContent = '写真を読み込めませんでした。別の画像を選んでください。';
+          imageStatus.classList.remove('success');
+          imageStatus.classList.add('error');
+        }
+      };
+
+      reader.readAsDataURL(file);
+    });
+  }
+  
+  // その他のイベントリスナー
   if (beforeAfterToggle) beforeAfterToggle.addEventListener('click', toggleBeforeAfter);
   if (startDrawBtn) startDrawBtn.addEventListener('click', startDrawingMode);
   if (stopDrawBtn) stopDrawBtn.addEventListener('click', stopDrawingMode);
