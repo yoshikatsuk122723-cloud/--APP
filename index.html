@@ -8,96 +8,138 @@
 </head>
 <body>
   <main class="app-shell">
+    <!-- ヘッダー -->
     <header class="app-header">
-      <p class="eyebrow">外壁塗装の色選びをさらに実用的に</p>
-      <h1>外壁カラー後悔防止アプリ</h1>
-      <p class="description">画像はサーバーに送信せずブラウザ内だけで処理します。外壁だけ色変化を出しやすくし、営業シーンでも見せやすいUIです。</p>
+      <p class="eyebrow">営業の最強ツール</p>
+      <h1>外壁カラー提案アプリ</h1>
+      <p class="description">写真を1枚アップロードするだけで、リアルタイムに色見本を比較。後悔を減らす提案ができます。</p>
     </header>
 
-    <section class="card upload-card">
-      <div class="upload-top">
-        <label class="button-file" for="imageUpload">写真をアップロード</label>
-        <div class="status-box" id="imageStatus">未アップロード</div>
+    <!-- アップロード & プレビューセクション -->
+    <section class="card upload-section">
+      <div class="upload-header">
+        <label class="btn btn-primary btn-large" for="imageUpload">📸 写真をアップロード</label>
+        <div id="imageStatus" class="status-badge">未アップロード</div>
       </div>
-      <input id="imageUpload" type="file" accept="image/*" />
-      <p class="hint">家の写真だけを扱い、空・木・車にはカラーを乗せにくくします。</p>
-      <div class="preview-frame">
-        <div class="preview-header">
-          <span>プレビュー</span>
-          <button id="beforeAfterToggle" class="small-button" type="button">アフター表示</button>
+      <input id="imageUpload" type="file" accept="image/*" style="display:none;" />
+      
+      <div class="preview-container">
+        <div class="preview-controls">
+          <button id="beforeAfterToggle" class="btn btn-secondary" style="display:none;">ビフォー・アフター切り替え</button>
         </div>
-        <div class="image-preview" id="imagePreview">
-          <img id="previewImage" alt="家の写真プレビュー" />
-          <div class="preview-mask"></div>
-          <p class="placeholder">ここに住宅写真が表示されます。</p>
-        </div>
-      </div>
-    </section>
-
-    <section class="card theme-card">
-      <div class="section-title-row">
-        <h2>AIおすすめ配色</h2>
-        <p>ボタンを押すと外壁・屋根・サッシ・艶感を自動設定します。</p>
-      </div>
-      <div class="theme-grid" id="themeOptions"></div>
-      <div class="theme-comment" id="themeComment">おすすめ配色を選んで、営業トークに使えるコメントを表示します。</div>
-    </section>
-
-    <section class="card selector-card">
-      <div class="selector-grid">
-        <div>
-          <p class="label">外壁カラー</p>
-          <div class="color-options" id="wallColorOptions"></div>
-        </div>
-        <div>
-          <p class="label">屋根カラー</p>
-          <div class="small-options" id="roofColorOptions"></div>
-        </div>
-        <div>
-          <p class="label">サッシカラー</p>
-          <div class="small-options" id="sashColorOptions"></div>
-        </div>
-        <div>
-          <p class="label">仕上げ</p>
-          <div class="finish-options" id="finishOptions"></div>
-        </div>
-      </div>
-      <div class="selector-summary">
-        <div>
-          <p class="label">外壁</p>
-          <div class="color-swatch" id="selectedWallSwatch"></div>
-          <p id="selectedWallColorName" class="selected-color-name">--</p>
-        </div>
-        <div>
-          <p class="label">屋根</p>
-          <div class="color-swatch" id="selectedRoofSwatch"></div>
-          <p id="selectedRoofColorName" class="selected-color-name">--</p>
-        </div>
-        <div>
-          <p class="label">サッシ</p>
-          <div class="color-swatch" id="selectedSashSwatch"></div>
-          <p id="selectedSashColorName" class="selected-color-name">--</p>
-        </div>
-        <div>
-          <p class="label">仕上げ</p>
-          <div class="color-swatch" id="selectedFinishSwatch"></div>
-          <p id="selectedFinishName" class="selected-color-name">--</p>
+        <div class="canvas-wrapper">
+          <canvas id="previewCanvas"></canvas>
+          <p id="placeholderText" class="placeholder-text">ここに家の写真が表示されます</p>
         </div>
       </div>
     </section>
 
-    <section class="card save-card">
-      <div class="save-header">
-        <div>
-          <h2>保存・共有</h2>
-          <p>現在の配色を保存して、後で一覧から呼び出せます。</p>
-        </div>
-        <button id="copyShareUrl" class="button-secondary" type="button">共有URLをコピー</button>
+    <!-- AIおすすめ配色セクション -->
+    <section class="card theme-section">
+      <h2>💡 AIおすすめ配色</h2>
+      <p class="section-desc">以下をクリックすると、外壁・屋根・サッシ・艶感が自動で設定されます。</p>
+      <div class="theme-grid" id="themeGrid"></div>
+      <div class="theme-comment-box" id="themeCommentBox">
+        <p id="themeComment">おすすめ配色を選んで、営業トークに使えるコメントを表示します。</p>
       </div>
+    </section>
+
+    <!-- カラー・艶感選択セクション -->
+    <section class="card control-section">
+      <div class="control-grid">
+        <!-- 外壁カラー -->
+        <div class="control-group">
+          <h3>🏠 外壁カラー</h3>
+          <div class="color-buttons" id="wallColorGrid"></div>
+        </div>
+
+        <!-- 屋根カラー -->
+        <div class="control-group">
+          <h3>🔺 屋根カラー</h3>
+          <div class="small-buttons" id="roofColorGrid"></div>
+        </div>
+
+        <!-- サッシカラー -->
+        <div class="control-group">
+          <h3>🪟 サッシカラー</h3>
+          <div class="small-buttons" id="sashColorGrid"></div>
+        </div>
+
+        <!-- 艶感 -->
+        <div class="control-group">
+          <h3>✨ 艶感</h3>
+          <div class="finish-buttons" id="finishGrid"></div>
+        </div>
+      </div>
+
+      <!-- 現在の選択状態 -->
+      <div class="selection-display">
+        <div class="selection-item">
+          <span class="selection-label">外壁</span>
+          <div class="color-swatch" id="wallSwatchDisplay"></div>
+          <p id="wallColorDisplay" class="color-name">--</p>
+        </div>
+        <div class="selection-item">
+          <span class="selection-label">屋根</span>
+          <div class="color-swatch" id="roofSwatchDisplay"></div>
+          <p id="roofColorDisplay" class="color-name">--</p>
+        </div>
+        <div class="selection-item">
+          <span class="selection-label">サッシ</span>
+          <div class="color-swatch" id="sashSwatchDisplay"></div>
+          <p id="sashColorDisplay" class="color-name">--</p>
+        </div>
+        <div class="selection-item">
+          <span class="selection-label">艶感</span>
+          <div class="color-swatch" id="finishSwatchDisplay"></div>
+          <p id="finishDisplay" class="color-name">--</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- 色のリスク・現場目線コメント -->
+    <section class="card info-section">
+      <h2>⚠️ 経年変化リスク & 現場目線コメント</h2>
+      <div class="info-grid">
+        <div class="info-box">
+          <h4>経年変化リスク</h4>
+          <ul id="riskList" class="risk-list"></ul>
+        </div>
+        <div class="info-box">
+          <h4>現場目線コメント</h4>
+          <p id="siteFeedback" class="site-feedback">色を選ぶとここにアドバイスが表示されます。</p>
+        </div>
+        <div class="info-box">
+          <h4>配色相性診断</h4>
+          <p id="comboAdvice" class="combo-advice">3色の組み合わせを診断します。</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- 保存・共有セクション -->
+    <section class="card save-section">
+      <h2>💾 保存・共有</h2>
+      
+      <!-- 保存フォーム -->
       <div class="save-form">
-        <input id="saveName" type="text" placeholder="保存名を入力（例: 第一候補）" />
-        <button id="savePattern" class="button-primary" type="button">保存する</button>
+        <div class="form-group">
+          <input id="saveName" type="text" placeholder="保存名を入力（例: 第一候補）" />
+          <button id="savePatternBtn" class="btn btn-primary">保存する</button>
+        </div>
+        <button id="copyShareUrlBtn" class="btn btn-secondary">🔗 共有URLをコピー</button>
       </div>
+
+      <!-- 保存済み一覧 -->
+      <div class="saved-list">
+        <h3>保存済みパターン</h3>
+        <div id="savedPatternsList" class="patterns-grid"></div>
+      </div>
+    </section>
+  </main>
+
+  <script src="script.js"></script>
+</body>
+</html>
       <div class="save-list" id="savedList"></div>
     </section>
 
