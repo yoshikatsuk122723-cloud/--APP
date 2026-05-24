@@ -269,22 +269,28 @@ function renderThemes() {
 // ============================================================================
 
 function setupEventListeners() {
+  console.log('[app] setupEventListeners()');
   // 写真アップロード処理
   const imageSelectBtn = document.getElementById('imageSelectBtn');
   if (imageSelectBtn && imageUpload) {
     imageSelectBtn.addEventListener('click', () => {
+      console.log('[upload] imageSelectBtn clicked');
       imageUpload.click();
     });
   }
   
   if (imageUpload) {
     imageUpload.addEventListener('change', (event) => {
+      console.log('[upload] imageUpload change event');
       const file = event.target.files[0];
       if (!file) return;
+
+      console.log('[upload] file selected', file.name, file.type, file.size);
 
       const reader = new FileReader();
 
       reader.onload = () => {
+        console.log('[upload] FileReader.onload');
         // 画像をstateに保存
         currentState.originalImage = reader.result;
         
@@ -312,6 +318,7 @@ function setupEventListeners() {
         // 後処理：canvasに画像を読み込む
         const img = new Image();
         img.onload = () => {
+          console.log('[upload] img.onload', img.width, img.height);
           originalCanvas = createCanvasFromImage(img);
           processedCanvas = createCanvasFromImage(img);
           maskCanvas = document.createElement('canvas');
@@ -326,6 +333,7 @@ function setupEventListeners() {
       };
 
       reader.onerror = () => {
+        console.log('[upload] FileReader error', reader.error);
         if (imageStatus) {
           imageStatus.textContent = '写真を読み込めませんでした。別の画像を選んでください。';
           imageStatus.classList.remove('success');
