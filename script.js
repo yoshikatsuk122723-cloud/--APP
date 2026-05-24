@@ -189,7 +189,13 @@ const themeComment = document.getElementById("themeComment");
 // ============================================================================
 
 function init() {
+  console.log('[init] ========== init() START ==========');
+  
+  console.log('[init] About to call renderWallColors()');
   renderWallColors();
+  console.log('[init] renderWallColors() completed');
+  console.log('[init] wallColorGrid.childElementCount:', wallColorGrid ? wallColorGrid.childElementCount : 'NULL');
+  
   renderRoofColors();
   renderSashColors();
   renderFinishOptions();
@@ -197,6 +203,8 @@ function init() {
   setupEventListeners();
   updateDisplay();
   loadSavedPatterns();
+  
+  console.log('[init] ========== init() END ==========');
 }
 
 // ============================================================================
@@ -204,16 +212,38 @@ function init() {
 // ============================================================================
 
 function renderWallColors() {
+  console.log('[render] renderWallColors called');
+  console.log('[render] wallColorGrid:', wallColorGrid);
+  console.log('[render] wallColorGrid is null?', wallColorGrid === null);
+  console.log('[render] wallColorGrid is undefined?', wallColorGrid === undefined);
+  
+  if (!wallColorGrid) {
+    console.error('[render] ERROR: wallColorGrid is null/undefined!');
+    return;
+  }
+  
+  console.log('[render] WALL_COLORS.length:', WALL_COLORS.length);
   wallColorGrid.innerHTML = "";
+  console.log('[render] After innerHTML="", childElementCount:', wallColorGrid.childElementCount);
+  
+  let buttonCount = 0;
   WALL_COLORS.forEach(color => {
+    console.log('[render] Creating button for:', color.id);
     const btn = document.createElement("button");
     btn.className = "color-button";
     btn.textContent = color.name;
     btn.style.background = "linear-gradient(180deg, " + color.value + " 0%, rgba(255,255,255,0.06) 100%)";
     btn.onclick = () => { selectWallColor(color.id); };
     if (currentState.wall === color.id) btn.classList.add("selected");
+    
     wallColorGrid.appendChild(btn);
+    buttonCount++;
+    console.log('[render] Button added, total buttons:', buttonCount, 'childElementCount:', wallColorGrid.childElementCount);
   });
+  
+  console.log('[render] renderWallColors completed. Final childElementCount:', wallColorGrid.childElementCount);
+  console.log('[render] wallColorGrid.innerHTML length:', wallColorGrid.innerHTML.length);
+  console.log('[render] wallColorGrid.innerHTML preview:', wallColorGrid.innerHTML.substring(0, 100));
 }
 
 function renderRoofColors() {
@@ -270,6 +300,14 @@ function renderThemes() {
 
 function setupEventListeners() {
   console.log('[app] setupEventListeners()');
+  console.log('[el] imageSelectBtn present?', !!document.getElementById('imageSelectBtn'));
+  console.log('[el] imageUpload present?', !!document.getElementById('imageUpload'));
+  try {
+    const btnEl = document.getElementById('imageSelectBtn');
+    if (btnEl) console.log('[el] imageSelectBtn rect', btnEl.getBoundingClientRect());
+  } catch (e) {
+    console.log('[el] getBoundingClientRect error', e);
+  }
   // 写真アップロード処理
   const imageSelectBtn = document.getElementById('imageSelectBtn');
   if (imageSelectBtn && imageUpload) {
@@ -490,12 +528,6 @@ function stopDrawingMode() {
   isDrawingMode = false;
   isDrawing = false;
   
-  // ペイント用キャンバスから マスクキャンバスへコピー
-  if (maskCanvas) {
-    const ctx = maskCanvas.getContext('2d');
-    ctx.drawImage(drawingCanvas, 0, 0);
-  }
-  
   drawingCanvas.style.display = 'none';
   drawingHint.style.display = 'none';
   if (previewImage) previewImage.style.display = 'none';
@@ -533,6 +565,13 @@ function handleCanvasMouseDown(e) {
   const ctx = drawingCanvas.getContext('2d');
   ctx.beginPath();
   ctx.moveTo(x, y);
+  
+  // maskCanvas のパスも開始
+  if (maskCanvas) {
+    const maskCtx = maskCanvas.getContext('2d');
+    maskCtx.beginPath();
+    maskCtx.moveTo(x, y);
+  }
 }
 
 function handleCanvasMouseMove(e) {
@@ -542,11 +581,22 @@ function handleCanvasMouseMove(e) {
   const y = e.clientY - rect.top;
   const ctx = drawingCanvas.getContext('2d');
   ctx.strokeStyle = 'rgba(200, 200, 255, 0.8)';
-  ctx.lineWidth = 3;
+  ctx.lineWidth = 45;  // 面のように塗る感覚の太いブラシ
   ctx.lineCap = 'round';
   ctx.lineJoin = 'round';
   ctx.lineTo(x, y);
   ctx.stroke();
+  
+  // maskCanvas にも同じ線を描く
+  if (maskCanvas) {
+    const maskCtx = maskCanvas.getContext('2d');
+    maskCtx.strokeStyle = 'rgba(255, 255, 255, 1)';
+    maskCtx.lineWidth = 45;  // 面のように塗る感覚の太いブラシ
+    maskCtx.lineCap = 'round';
+    maskCtx.lineJoin = 'round';
+    maskCtx.lineTo(x, y);
+    maskCtx.stroke();
+  }
 }
 
 function handleCanvasMouseUp() {
@@ -565,6 +615,13 @@ function handleCanvasTouchStart(e) {
   const ctx = drawingCanvas.getContext('2d');
   ctx.beginPath();
   ctx.moveTo(x, y);
+  
+  // maskCanvas のパスも開始
+  if (maskCanvas) {
+    const maskCtx = maskCanvas.getContext('2d');
+    maskCtx.beginPath();
+    maskCtx.moveTo(x, y);
+  }
 }
 
 function handleCanvasTouchMove(e) {
@@ -576,11 +633,22 @@ function handleCanvasTouchMove(e) {
   const y = touch.clientY - rect.top;
   const ctx = drawingCanvas.getContext('2d');
   ctx.strokeStyle = 'rgba(200, 200, 255, 0.8)';
-  ctx.lineWidth = 3;
+  ctx.lineWidth = 45;  // 面のように塗る感覚の太いブラシ
   ctx.lineCap = 'round';
   ctx.lineJoin = 'round';
   ctx.lineTo(x, y);
   ctx.stroke();
+  
+  // maskCanvas にも同じ線を描く
+  if (maskCanvas) {
+    const maskCtx = maskCanvas.getContext('2d');
+    maskCtx.strokeStyle = 'rgba(255, 255, 255, 1)';
+    maskCtx.lineWidth = 45;  // 面のように塗る感覚の太いブラシ
+    maskCtx.lineCap = 'round';
+    maskCtx.lineJoin = 'round';
+    maskCtx.lineTo(x, y);
+    maskCtx.stroke();
+  }
 }
 
 function handleCanvasTouchEnd(e) {
@@ -590,7 +658,11 @@ function handleCanvasTouchEnd(e) {
 }
 
 function redrawCanvas() {
-  if (!originalCanvas) return;
+  console.log('[redraw] redrawCanvas() called');
+  if (!originalCanvas) {
+    console.log('[redraw] originalCanvas is null');
+    return;
+  }
 
   // previewCanvas を表示、previewImage を隠す
   if (previewImage) previewImage.style.display = 'none';
@@ -601,26 +673,53 @@ function redrawCanvas() {
   previewCanvas.width = originalCanvas.width;
   previewCanvas.height = originalCanvas.height;
   ctx.drawImage(originalCanvas, 0, 0);
+  
+  // マスク診断
+  if (maskCanvas) {
+    const maskCtx = maskCanvas.getContext('2d');
+    const maskImageData = maskCtx.getImageData(0, 0, maskCanvas.width, maskCanvas.height);
+    const maskData = maskImageData.data;
+    let opaquePixels = 0;
+    for (let i = 3; i < maskData.length; i += 4) {
+      if (maskData[i] > 10) opaquePixels++;
+    }
+    const maskRate = ((opaquePixels / (maskData.length / 4)) * 100).toFixed(1);
+    console.log(`[redraw] マスク状態: ${opaquePixels} pixels (${maskRate}% of canvas)`);
+  } else {
+    console.log('[redraw] maskCanvas is null');
+  }
 
+  console.log(`[redraw] isShowingAfter=${isShowingAfter}, maskCanvas=${maskCanvas ? 'exists' : 'null'}`);
   if (isShowingAfter && maskCanvas) {
+    console.log('[redraw] Entering color apply block');
     // マスク部分だけに色を反映
     const wallColor = WALL_COLORS.find(c => c.id === currentState.wall);
     const finish = FINISH_OPTIONS.find(f => f.id === currentState.finish);
+    console.log(`[redraw] wallColor=${wallColor ? wallColor.id : 'not found'}, finish=${finish ? finish.id : 'not found'}`);
 
     if (wallColor && finish) {
+      console.log('[redraw] Calling applyColorOverlayWithMask()');
       applyColorOverlayWithMask(previewCanvas, maskCanvas, wallColor.value, finish.opacity);
       applyFinishEffectWithMask(previewCanvas, maskCanvas, finish.id);
+    } else {
+      console.log('[redraw] wallColor or finish is missing');
     }
+  } else {
+    console.log('[redraw] Skipping color apply (isShowingAfter or maskCanvas condition not met)');
   }
 }
 
 function applyColorOverlayWithMask(canvas, mask, color, opacity) {
+  console.log('[mask] applyColorOverlayWithMask() called');
+  console.log(`[mask] canvas=${canvas.width}x${canvas.height}, mask=${mask.width}x${mask.height}, color=${color}, opacity=${opacity}`);
+  
   const ctx = canvas.getContext("2d");
   const maskCtx = mask.getContext('2d');
   
   // マスクの画像データを取得
   const maskImageData = maskCtx.getImageData(0, 0, mask.width, mask.height);
   const maskData = maskImageData.data;
+  console.log(`[mask] maskData.length=${maskData.length}`);
   
   // キャンバスの画像データを取得
   const canvasImageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
@@ -628,11 +727,23 @@ function applyColorOverlayWithMask(canvas, mask, color, opacity) {
   
   // 色を RGB に分解
   const rgb = hexToRgb(color);
+  console.log(`[mask] RGB=${rgb.r},${rgb.g},${rgb.b}`);
+  
+  // マスク診断ログ
+  let opaquePixels = 0;
+  let totalPixels = maskData.length / 4;
+  for (let i = 3; i < maskData.length; i += 4) {
+    if (maskData[i] > 10) opaquePixels++;
+  }
+  const maskRate = ((opaquePixels / totalPixels) * 100).toFixed(1);
+  console.log(`[mask] 不透明ピクセル: ${opaquePixels} / ${totalPixels} (${maskRate}%)`);
   
   // マスク領域に色を乗せる（multiply 合成の近似）
+  let appliedPixels = 0;
   for (let i = 0; i < maskData.length; i += 4) {
     const maskAlpha = maskData[i + 3]; // マスクのアルファ値
-    if (maskAlpha > 0) {
+    if (maskAlpha > 10) {
+      appliedPixels++;
       // この部分は選択されている
       const pixelIdx = i;
       const origR = canvasData[pixelIdx];
@@ -649,8 +760,10 @@ function applyColorOverlayWithMask(canvas, mask, color, opacity) {
       canvasData[pixelIdx + 3] = Math.min(255, alpha + (255 * opacity * maskAlpha / 255));
     }
   }
+  console.log(`[mask] 色適用ピクセル: ${appliedPixels}`);
   
   ctx.putImageData(canvasImageData, 0, 0);
+  console.log(`[mask] 色適用完了: ${color} opacity=${opacity}`);
 }
 
 function hexToRgb(hex) {
@@ -724,7 +837,10 @@ function toggleBeforeAfter() {
 // ============================================================================
 
 function selectWallColor(colorId) {
+  console.log(`[select] selectWallColor(${colorId})`);
   currentState.wall = colorId;
+  isShowingAfter = true;
+  console.log(`[select] isShowingAfter=${isShowingAfter}`);
   updateDisplay();
   renderWallColors();
   redrawCanvas();
