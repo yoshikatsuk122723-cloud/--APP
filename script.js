@@ -268,8 +268,6 @@ function renderThemes() {
 // イベント設定と画像アップロード処理
 // ============================================================================
 
-const previewImage = document.getElementById('previewImage');
-
 function setupEventListeners() {
   // 写真アップロード処理
   const imageSelectBtn = document.getElementById('imageSelectBtn');
