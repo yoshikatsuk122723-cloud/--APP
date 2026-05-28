@@ -558,103 +558,144 @@ function resetMask() {
 // マウスイベント
 function handleCanvasMouseDown(e) {
   if (!isDrawingMode) return;
-  isDrawing = true;
   const rect = drawingCanvas.getBoundingClientRect();
   const x = e.clientX - rect.left;
   const y = e.clientY - rect.top;
-  const ctx = drawingCanvas.getContext('2d');
-  ctx.beginPath();
-  ctx.moveTo(x, y);
   
-  // maskCanvas のパスも開始
+  // フラッドフィルを実行
   if (maskCanvas) {
-    const maskCtx = maskCanvas.getContext('2d');
-    maskCtx.beginPath();
-    maskCtx.moveTo(x, y);
+    floodFill(drawingCanvas, maskCanvas, x, y);
+    // 描画キャンバスに選択結果を表示
+    updateDrawingCanvasFromMask();
   }
 }
 
 function handleCanvasMouseMove(e) {
-  if (!isDrawing) return;
-  const rect = drawingCanvas.getBoundingClientRect();
-  const x = e.clientX - rect.left;
-  const y = e.clientY - rect.top;
-  const ctx = drawingCanvas.getContext('2d');
-  ctx.strokeStyle = 'rgba(200, 200, 255, 0.8)';
-  ctx.lineWidth = 45;  // 面のように塗る感覚の太いブラシ
-  ctx.lineCap = 'round';
-  ctx.lineJoin = 'round';
-  ctx.lineTo(x, y);
-  ctx.stroke();
-  
-  // maskCanvas にも同じ線を描く
-  if (maskCanvas) {
-    const maskCtx = maskCanvas.getContext('2d');
-    maskCtx.strokeStyle = 'rgba(255, 255, 255, 1)';
-    maskCtx.lineWidth = 45;  // 面のように塗る感覚の太いブラシ
-    maskCtx.lineCap = 'round';
-    maskCtx.lineJoin = 'round';
-    maskCtx.lineTo(x, y);
-    maskCtx.stroke();
-  }
+  // 移動時は何もしない（フラッドフィルではマウス移動を使わない）
 }
 
 function handleCanvasMouseUp() {
-  isDrawing = false;
+  // マウスアップ時は何もしない
 }
 
 // タッチイベント
 function handleCanvasTouchStart(e) {
   if (!isDrawingMode) return;
   e.preventDefault();
-  isDrawing = true;
   const rect = drawingCanvas.getBoundingClientRect();
   const touch = e.touches[0];
   const x = touch.clientX - rect.left;
   const y = touch.clientY - rect.top;
-  const ctx = drawingCanvas.getContext('2d');
-  ctx.beginPath();
-  ctx.moveTo(x, y);
   
-  // maskCanvas のパスも開始
+  // フラッドフィルを実行
   if (maskCanvas) {
-    const maskCtx = maskCanvas.getContext('2d');
-    maskCtx.beginPath();
-    maskCtx.moveTo(x, y);
+    floodFill(drawingCanvas, maskCanvas, x, y);
+    // 描画キャンバスに選択結果を表示
+    updateDrawingCanvasFromMask();
   }
 }
 
 function handleCanvasTouchMove(e) {
-  if (!isDrawing) return;
+  // タッチ移動時は何もしない
   e.preventDefault();
-  const rect = drawingCanvas.getBoundingClientRect();
-  const touch = e.touches[0];
-  const x = touch.clientX - rect.left;
-  const y = touch.clientY - rect.top;
-  const ctx = drawingCanvas.getContext('2d');
-  ctx.strokeStyle = 'rgba(200, 200, 255, 0.8)';
-  ctx.lineWidth = 45;  // 面のように塗る感覚の太いブラシ
-  ctx.lineCap = 'round';
-  ctx.lineJoin = 'round';
-  ctx.lineTo(x, y);
-  ctx.stroke();
-  
-  // maskCanvas にも同じ線を描く
-  if (maskCanvas) {
-    const maskCtx = maskCanvas.getContext('2d');
-    maskCtx.strokeStyle = 'rgba(255, 255, 255, 1)';
-    maskCtx.lineWidth = 45;  // 面のように塗る感覚の太いブラシ
-    maskCtx.lineCap = 'round';
-    maskCtx.lineJoin = 'round';
-    maskCtx.lineTo(x, y);
-    maskCtx.stroke();
-  }
 }
 
 function handleCanvasTouchEnd(e) {
-  if (!isDrawing) return;
+  // タッチ終了時は何もしない
   e.preventDefault();
-  isDrawing = false;
+}
+
+// フラッドフィル（バケットツール）機能
+function floodFill(canvas, maskCanvas, startX, startY) {
+  startX = Math.round(startX);
+  startY = Math.round(startY);
+  
+  // 元画像の画像データを取得
+  const ctx = canvas.getContext('2d');
+  const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+  const data = imageData.data;
+  
+  // クリック位置のピクセルインデックスを計算
+  const pixelIndex = (startY * canvas.width + startX) * 4;
+  
+  // クリック位置が範囲外の場合は何もしない
+  if (startX < 0 || startX >= canvas.width || startY < 0 || startY >= canvas.height) {
+    return;
+  }
+  
+  // マスク画像データを取得
+  const maskCtx = maskCanvas.getContext('2d');
+  const maskImageData = maskCtx.getImageData(0, 0, maskCanvas.width, maskCanvas.height);
+  const maskData = maskImageData.data;
+  
+  // クリック位置の色を取得（ターゲット色）
+  const targetR = data[pixelIndex];
+  const targetG = data[pixelIndex + 1];
+  const targetB = data[pixelIndex + 2];
+  const targetA = data[pixelIndex + 3];
+  
+  // BFS（幅優先探索）でフラッドフィルを実行
+  const queue = [[startX, startY]];
+  const visited = new Uint8Array(canvas.width * canvas.height);
+  const tolerance = 30; // 色の許容差
+  
+  while (queue.length > 0) {
+    const [x, y] = queue.shift();
+    
+    // 範囲外チェック
+    if (x < 0 || x >= canvas.width || y < 0 || y >= canvas.height) {
+      continue;
+    }
+    
+    // 訪問済みチェック
+    const visitIndex = y * canvas.width + x;
+    if (visited[visitIndex]) {
+      continue;
+    }
+    visited[visitIndex] = 1;
+    
+    // 現在のピクセルの色を取得
+    const idx = visitIndex * 4;
+    const currentR = data[idx];
+    const currentG = data[idx + 1];
+    const currentB = data[idx + 2];
+    const currentA = data[idx + 3];
+    
+    // 色が似ているかチェック
+    const rDiff = Math.abs(currentR - targetR);
+    const gDiff = Math.abs(currentG - targetG);
+    const bDiff = Math.abs(currentB - targetB);
+    const aDiff = Math.abs(currentA - targetA);
+    
+    if (rDiff <= tolerance && gDiff <= tolerance && bDiff <= tolerance && aDiff <= tolerance) {
+      // マスクに塗りつぶす
+      maskData[idx] = 255;
+      maskData[idx + 1] = 255;
+      maskData[idx + 2] = 255;
+      maskData[idx + 3] = 255; // アルファを完全不透明に
+      
+      // 隣接ピクセルをキューに追加（4方向）
+      queue.push([x + 1, y]);
+      queue.push([x - 1, y]);
+      queue.push([x, y + 1]);
+      queue.push([x, y - 1]);
+    }
+  }
+  
+  // マスク画像データをキャンバスに反映
+  maskCtx.putImageData(maskImageData, 0, 0);
+}
+
+// 描画キャンバスにマスク結果を反映
+function updateDrawingCanvasFromMask() {
+  const ctx = drawingCanvas.getContext('2d');
+  ctx.drawImage(originalCanvas, 0, 0);
+  
+  // マスク領域を半透明で表示
+  if (maskCanvas) {
+    ctx.fillStyle = 'rgba(100, 150, 255, 0.15)';
+    ctx.drawImage(maskCanvas, 0, 0);
+  }
 }
 
 function redrawCanvas() {
