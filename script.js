@@ -311,9 +311,14 @@ function setupEventListeners() {
   // 写真アップロード処理
   const imageSelectBtn = document.getElementById('imageSelectBtn');
   if (imageSelectBtn && imageUpload) {
-    imageSelectBtn.addEventListener('click', () => {
+    imageSelectBtn.addEventListener('click', (e) => {
       console.log('[upload] imageSelectBtn clicked');
-      imageUpload.click();
+      // If this is a <label for="imageUpload">, the browser already opens the file picker.
+      if (imageSelectBtn.tagName !== 'LABEL') {
+        imageUpload.click();
+      } else {
+        console.log('[upload] native label used — skip programmatic click');
+      }
     });
   }
   
